@@ -20,9 +20,11 @@ entity ctrl_bus is
         ------------------------------------------------
         -- Control bus signals (PUT YOUR REGISTERS HERE)
         ------------------------------------------------
-        cb_control_reg      : out std_logic_vector(C_S_AXI_DATA_WIDTH-1 downto 0);
+        cb_i2s_control_reg  : out std_logic_vector(C_S_AXI_DATA_WIDTH-1 downto 0);
         cb_status_reg       : in  std_logic_vector(C_S_AXI_DATA_WIDTH-1 downto 0);
-        cb_gain_reg         : out std_logic_vector(C_S_AXI_DATA_WIDTH-1 downto 0);
+        cb_axi_control_reg  : out std_logic_vector(C_S_AXI_DATA_WIDTH-1 downto 0);
+        cb_version_reg      : in  std_logic_vector(C_S_AXI_DATA_WIDTH-1 downto 0);
+
 
         ------------------------------------------------
         -- AXI Lite signals
@@ -147,9 +149,10 @@ begin
 	S_AXI_RRESP	    <= axi_rresp;
 	S_AXI_RVALID	<= axi_rvalid;
     --
-    cb_control_reg  <= slv_reg0;
-    slv_reg1        <= cb_status_reg;
-    cb_gain_reg     <= slv_reg3;
+    cb_i2s_control_reg      <= slv_reg0;
+    slv_reg1                <= cb_status_reg;
+    cb_axi_control_reg      <= slv_reg3;
+    slv_reg2                <= cb_version_reg;
 
 	-- Implement axi_awready generation
 	-- axi_awready is asserted for one S_AXI_ACLK clock cycle when both
@@ -229,7 +232,7 @@ begin
 	slv_reg_wren <= axi_wready and S_AXI_WVALID and axi_awready and S_AXI_AWVALID ;
 
     -- slv_reg1 <= x"DEADBEEF";
-    slv_reg2 <= x"0CA7CAFE";
+    -- slv_reg2 <= x"0CA7CAFE";
 
 	process (S_AXI_ACLK)
 	variable loc_addr :std_logic_vector(OPT_MEM_ADDR_BITS downto 0); 

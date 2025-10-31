@@ -84,12 +84,14 @@ architecture Behavioural of audio_pipeline is
     --------------------------------------------------
     -- Control interface (AXI4-Lite)
     --------------------------------------------------
-    signal sig_control_reg          : std_logic_vector(DATA_WIDTH-1 downto 0);
+    signal sig_i2s_control_reg          : std_logic_vector(DATA_WIDTH-1 downto 0);
     signal sig_status_reg           : std_logic_vector(DATA_WIDTH-1 downto 0);
-    signal sig_gain_reg             : std_logic_vector(DATA_WIDTH-1 downto 0);
+    signal sig_axi_control_reg             : std_logic_vector(DATA_WIDTH-1 downto 0);
+    signal sig_version_reg             : std_logic_vector(DATA_WIDTH-1 downto 0);
+
 
 begin
-
+    sig_version_reg <= "00000000000000000000000000000010";
     --------------------------------------------------
     -- Control bus
     --------------------------------------------------
@@ -99,9 +101,10 @@ begin
 		C_S_AXI_ADDR_WIDTH	=> C_S00_AXI_ADDR_WIDTH
 	)
 	port map (
-        cb_control_reg  => sig_control_reg,
+        cb_i2s_control_reg  => sig_i2s_control_reg,
         cb_status_reg   => sig_status_reg,
-        cb_gain_reg     => sig_gain_reg,
+        cb_axi_control_reg     => sig_axi_control_reg,
+        cb_version_reg => sig_version_reg,
 
 		S_AXI_ACLK	    => s00_axi_aclk,
 		S_AXI_ARESETN	=> s00_axi_aresetn,
@@ -139,7 +142,7 @@ begin
     )
     port map (
         clk             => clk,
-        ctr_reg         => sig_control_reg,
+        ctr_reg         => sig_i2s_control_reg,
 
         i2s_lrcl        => i2s_lrcl,
         i2s_dout        => i2s_dout,
@@ -191,7 +194,7 @@ begin
             if ((sig_axis_tvalid and axis_tready) = '1') then
                 v_cnt := v_cnt + 1;
                 
-                if (v_cnt = 256) then
+                if (v_cnt = to_integer(unsigned(sig_axi_control_reg))) then
                     axis_tlast <= '1';
                     v_cnt := 0;
                 else

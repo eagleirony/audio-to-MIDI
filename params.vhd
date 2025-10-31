@@ -92,10 +92,11 @@ package aud_param is
             ------------------------------------------------
             -- Control bus signals (PUT YOUR REGISTERS HERE)
             ------------------------------------------------
-            cb_control_reg      : out std_logic_vector(C_S_AXI_DATA_WIDTH-1 downto 0);
+            cb_i2s_control_reg  : out std_logic_vector(C_S_AXI_DATA_WIDTH-1 downto 0);
             cb_status_reg       : in  std_logic_vector(C_S_AXI_DATA_WIDTH-1 downto 0);
-            cb_gain_reg         : out std_logic_vector(C_S_AXI_DATA_WIDTH-1 downto 0);
-    
+            cb_axi_control_reg  : out std_logic_vector(C_S_AXI_DATA_WIDTH-1 downto 0);
+            cb_version_reg      : in  std_logic_vector(C_S_AXI_DATA_WIDTH-1 downto 0);
+
             ------------------------------------------------
             -- AXI Lite signals
             ------------------------------------------------

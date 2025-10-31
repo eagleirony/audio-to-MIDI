@@ -22,20 +22,132 @@
 #include "xaxidma.h"
 #include "xil_printf.h"
 #include "xparameters.h"
+#include "xsdps.h"
 #include "xil_io.h"
 #include "sleep.h"
+#include "ff.h"
 
 #define AXI_FIFO_BASE 			0xA0000000
 #define AXI_I2S_CTR_OFFSET 		0
 #define AXI_FIFO_STATUS_OFFSET 	4
+#define AXI_VERSION_OFFSET 		8
+#define AXI_AXI_CTR_OFFSET 		12
 
 #define I2S_ENABLE_CAPTURE 	0x0001
 #define I2S_ENABLE_LEFT 	0x0002
 #define I2S_ENABLE_RIGHT 	0x0004
 
-#define BUF_SIZE 1024
+#define BUF_SIZE 8192
+#define SAMPLES 500
 
-volatile char rx_buf[BUF_SIZE] = {0};
+volatile char rx_buf[BUF_SIZE*SAMPLES] = {0};
+
+FATFS FatFs;
+FIL fil;
+
+void print_regs() {
+	printf("    FIFO Status: 0x%08x\n", Xil_In32(AXI_FIFO_BASE + AXI_FIFO_STATUS_OFFSET));
+	printf("Bitfile Version: 0x%08x\n", Xil_In32(AXI_FIFO_BASE + AXI_VERSION_OFFSET));
+	printf("    I2S Control: 0x%08x\n", Xil_In32(AXI_FIFO_BASE + AXI_I2S_CTR_OFFSET));
+	printf("    AXI Control: 0x%08x\n", Xil_In32(AXI_FIFO_BASE + AXI_AXI_CTR_OFFSET));
+}
+
+void wav_write_header() {
+    FRESULT fr;
+    int wcount;
+    char wav_buf[256] = {0};
+
+    /* Give a work area to the default drive */
+    fr = f_mount(&FatFs, "1:/", 0);
+    if (fr) {
+		printf("Mount failed %d\n", fr);
+		return;
+	}
+
+    fr = f_open(&fil, "1:/mic.wav", FA_WRITE | FA_CREATE_ALWAYS);
+    if (fr) {
+    	printf("Open failed %d\n", fr);
+    	return;
+    }
+
+    wav_buf[0] = 'R';
+    wav_buf[1] = 'I';
+    wav_buf[2] = 'F';
+    wav_buf[3] = 'F';
+
+    wav_buf[4] = ( (uint32_t)BUF_SIZE*SAMPLES + 44 - 8) & 0xFF;
+    wav_buf[5] = (((uint32_t)BUF_SIZE*SAMPLES + 44 - 8) >> 8) & 0xFF;
+    wav_buf[6] = (((uint32_t)BUF_SIZE*SAMPLES + 44 - 8) >> 16) & 0xFF;
+    wav_buf[7] = (((uint32_t)BUF_SIZE*SAMPLES + 44 - 8) >> 24) & 0xFF;
+
+    wav_buf[8] = 'W';
+    wav_buf[9] = 'A';
+    wav_buf[10] = 'V';
+    wav_buf[11] = 'E';
+
+    wav_buf[12] = 'f';
+    wav_buf[13] = 'm';
+    wav_buf[14] = 't';
+    wav_buf[15] = 0x20;
+
+    wav_buf[16] = 0x10;
+
+    wav_buf[20] = 0x01;
+
+    wav_buf[22] = 0x01;
+
+    wav_buf[24] = ( (uint32_t)25201) & 0xFF;
+    wav_buf[25] = (((uint32_t)25201) >> 8) & 0xFF;
+    wav_buf[26] = (((uint32_t)25201) >> 16) & 0xFF;
+    wav_buf[27] = (((uint32_t)25201) >> 24) & 0xFF;
+
+    wav_buf[28] = ( (uint32_t)25201 * 4) & 0xFF;
+    wav_buf[29] = (((uint32_t)25201 * 4) >> 8) & 0xFF;
+    wav_buf[30] = (((uint32_t)25201 * 4) >> 16) & 0xFF;
+    wav_buf[31] = (((uint32_t)25201 * 4) >> 24) & 0xFF;
+
+    wav_buf[32] = 0x4;
+
+    wav_buf[34] = 32;
+
+    wav_buf[36] = 'd';
+    wav_buf[37] = 'a';
+	wav_buf[38] = 't';
+	wav_buf[39] = 'a';
+
+	wav_buf[40] = ( (uint32_t)BUF_SIZE*SAMPLES) & 0xFF;
+    wav_buf[41] = (((uint32_t)BUF_SIZE*SAMPLES) >> 8) & 0xFF;
+    wav_buf[42] = (((uint32_t)BUF_SIZE*SAMPLES) >> 16) & 0xFF;
+    wav_buf[43] = (((uint32_t)BUF_SIZE*SAMPLES) >> 24) & 0xFF;
+
+    fr = f_write(&fil, wav_buf, 44, &wcount);
+    if (fr) {
+    	printf("Write failed %d: %d\n", fr, wcount);
+    	return;
+    }
+    printf("Wrote %d bytes\n", wcount);
+}
+
+void wav_write_data() {
+	FRESULT fr;
+    int wcount;
+    for (int i = 0; i < SAMPLES; ++i) {
+		fr = f_write(&fil, &rx_buf[BUF_SIZE * i], BUF_SIZE, &wcount);
+		if (fr) {
+			printf("Write failed %d: %d\n", fr, wcount);
+			return;
+		}
+    }
+}
+
+void wav_close() {
+	FRESULT fr;
+    fr = f_close(&fil);
+    if (fr) {
+		printf("Close failed %d\n", fr);
+		return;
+	}
+}
 
 int main()
 {
@@ -45,12 +157,14 @@ int main()
 
     print("Hello World\n\r");
 
-	printf("FIFO Status: 0x%08x\n", Xil_In32(AXI_FIFO_BASE + AXI_FIFO_STATUS_OFFSET));
-	printf("I2S Control: 0x%08x\n", Xil_In32(AXI_FIFO_BASE + AXI_I2S_CTR_OFFSET));
+	print_regs();
 	printf("Enabling I2S Left channel\n");
 	Xil_Out32(AXI_FIFO_BASE + AXI_I2S_CTR_OFFSET, I2S_ENABLE_CAPTURE | I2S_ENABLE_LEFT);
-	printf("I2S Control: 0x%08x\n", Xil_In32(AXI_FIFO_BASE + AXI_I2S_CTR_OFFSET));
+	printf("Setting AXI transfer length to %d\n", BUF_SIZE/4);
+	Xil_Out32(AXI_FIFO_BASE + AXI_AXI_CTR_OFFSET, BUF_SIZE/4);
+	print_regs();
 
+	wav_write_header();
 
 	int Status = XST_SUCCESS;
 
@@ -84,54 +198,26 @@ int main()
 	XAxiDma_IntrDisable(&AxiDma, XAXIDMA_IRQ_ALL_MASK, XAXIDMA_DEVICE_TO_DMA);
 	XAxiDma_IntrDisable(&AxiDma, XAXIDMA_IRQ_ALL_MASK, XAXIDMA_DMA_TO_DEVICE);
 
-	/* We will need to always flush the buffers before
-	* using DMA-managed memory,
-	* unless we properly configure cache coherency */
-	Xil_DCacheFlushRange((UINTPTR)rx_buf, BUF_SIZE);
-	Status = XAxiDma_SimpleTransfer(&AxiDma, (UINTPTR) rx_buf,
-			BUF_SIZE, XAXIDMA_DEVICE_TO_DMA);
-	if (Status != XST_SUCCESS) {
-		print("failed rx transfer call\r\n");
-		return 1;
-	}
-
-	print("rx call good\r\n");
-
-	while (1) {
-		if (!(XAxiDma_Busy(&AxiDma, XAXIDMA_DEVICE_TO_DMA))) {
-			break;
+	printf("Record Started\n");
+	for (int i = 0; i < SAMPLES; ++i) {
+		Xil_DCacheFlushRange((UINTPTR)rx_buf, BUF_SIZE);
+		Status = XAxiDma_SimpleTransfer(&AxiDma, (UINTPTR) (&rx_buf[BUF_SIZE * i]),
+				BUF_SIZE, XAXIDMA_DEVICE_TO_DMA);
+		if (Status != XST_SUCCESS) {
+			print("failed rx transfer call\r\n");
+			return 1;
 		}
-		usleep(1U);
-	}
-	/* We will need to always flush the buffers before
-	* using DMA-managed memory,
-	* unless we properly configure cache coherency */
-	Xil_DCacheFlushRange((UINTPTR)rx_buf, BUF_SIZE);
-	print("DMA done\r\n");
 
-	Xil_DCacheFlushRange((UINTPTR)rx_buf, BUF_SIZE);
-	Status = XAxiDma_SimpleTransfer(&AxiDma, (UINTPTR) rx_buf,
-			BUF_SIZE, XAXIDMA_DEVICE_TO_DMA);
-	if (Status != XST_SUCCESS) {
-		print("failed rx transfer call\r\n");
-		return 1;
-	}
-
-	while (1) {
-		if (!(XAxiDma_Busy(&AxiDma, XAXIDMA_DEVICE_TO_DMA))) {
-			break;
+		while (1) {
+			if (!(XAxiDma_Busy(&AxiDma, XAXIDMA_DEVICE_TO_DMA))) {
+				break;
+			}
 		}
-		printf("Waiting on DMA: FIFO Status: 0x%08x\n", Xil_In32(AXI_FIFO_BASE + AXI_FIFO_STATUS_OFFSET));
-		usleep(1U);
 	}
-
-	for (int i = 0; i < BUF_SIZE; i = i + 4) {
-		printf("Sample %4d: 0x%02x%02x%02x%02x\n",
-				(i/4), rx_buf[i+3], rx_buf[i+2], rx_buf[i+1], rx_buf[i]);
-	}
-	printf("\n");
-
-	printf("Status: 0x%08x\n", Xil_In32(AXI_FIFO_BASE + AXI_FIFO_STATUS_OFFSET));
+	printf("Record finished\nWrite Start\n");
+	wav_write_data();
+	wav_close();
+	printf("Write end\n");
 
     cleanup_platform();
     return 0;
