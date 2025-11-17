@@ -27,29 +27,39 @@
 #include "sleep.h"
 #include "ff.h"
 
-#define AXI_FIFO_BASE 			0xA0000000
-#define AXI_I2S_CTR_OFFSET 		0
-#define AXI_FIFO_STATUS_OFFSET 	4
-#define AXI_VERSION_OFFSET 		8
-#define AXI_AXI_CTR_OFFSET 		12
+#define AXI_FIFO_BASE 				0xA0000000
+#define AXI_I2S_CTR_OFFSET 			0
+#define AXI_DATA_FIFO_STATUS_OFFSET 4
+#define AXI_VERSION_OFFSET 			8
+#define AXI_AXI_CTR_OFFSET 			12
+#define AXI_FB_FIFO_STATUS_OFFSET 	16
+#define AXI_AXIS_MASTER_OFFSET 		20
 
 #define I2S_ENABLE_CAPTURE 	0x0001
 #define I2S_ENABLE_LEFT 	0x0002
 #define I2S_ENABLE_RIGHT 	0x0004
+#define I2S_ENABLE_FEEDBACK 0x0040
 
-#define BUF_SIZE 8192
+#define BUF_SIZE 1024
 #define SAMPLES 500
 
 volatile char rx_buf[BUF_SIZE*SAMPLES] = {0};
+volatile char tx_buf[BUF_SIZE] = {0};
 
 FATFS FatFs;
 FIL fil;
 
+XAxiDma_Config *CfgPtr;
+XAxiDma AxiDma;
+
 void print_regs() {
-	printf("    FIFO Status: 0x%08x\n", Xil_In32(AXI_FIFO_BASE + AXI_FIFO_STATUS_OFFSET));
-	printf("Bitfile Version: 0x%08x\n", Xil_In32(AXI_FIFO_BASE + AXI_VERSION_OFFSET));
-	printf("    I2S Control: 0x%08x\n", Xil_In32(AXI_FIFO_BASE + AXI_I2S_CTR_OFFSET));
-	printf("    AXI Control: 0x%08x\n", Xil_In32(AXI_FIFO_BASE + AXI_AXI_CTR_OFFSET));
+	printf("   Bitfile Version: 0x%08x\n", Xil_In32(AXI_FIFO_BASE + AXI_VERSION_OFFSET));
+	printf("       I2S Control: 0x%08x\n", Xil_In32(AXI_FIFO_BASE + AXI_I2S_CTR_OFFSET));
+	printf("       AXI Control: 0x%08x\n", Xil_In32(AXI_FIFO_BASE + AXI_AXI_CTR_OFFSET));
+	printf("  Data FIFO Status: 0x%08x\n", Xil_In32(AXI_FIFO_BASE + AXI_DATA_FIFO_STATUS_OFFSET));
+	printf("    FB FIFO Status: 0x%08x\n", Xil_In32(AXI_FIFO_BASE + AXI_FB_FIFO_STATUS_OFFSET));
+	printf("AXIS master Status: 0x%08x\n", Xil_In32(AXI_FIFO_BASE + AXI_AXIS_MASTER_OFFSET));
+
 }
 
 void wav_write_header() {
@@ -60,13 +70,13 @@ void wav_write_header() {
     /* Give a work area to the default drive */
     fr = f_mount(&FatFs, "1:/", 0);
     if (fr) {
-		printf("Mount failed %d\n", fr);
+		printf("SD WAV: Mount failed %d\n", fr);
 		return;
 	}
 
     fr = f_open(&fil, "1:/mic.wav", FA_WRITE | FA_CREATE_ALWAYS);
     if (fr) {
-    	printf("Open failed %d\n", fr);
+    	printf("SD WAV: Open failed %d\n", fr);
     	return;
     }
 
@@ -122,10 +132,10 @@ void wav_write_header() {
 
     fr = f_write(&fil, wav_buf, 44, &wcount);
     if (fr) {
-    	printf("Write failed %d: %d\n", fr, wcount);
+    	printf("SD WAV: Write failed %d: %d\n", fr, wcount);
     	return;
     }
-    printf("Wrote %d bytes\n", wcount);
+    printf("SD WAV: Wrote %d bytes\n", wcount);
 }
 
 void wav_write_data() {
@@ -134,7 +144,7 @@ void wav_write_data() {
     for (int i = 0; i < SAMPLES; ++i) {
 		fr = f_write(&fil, &rx_buf[BUF_SIZE * i], BUF_SIZE, &wcount);
 		if (fr) {
-			printf("Write failed %d: %d\n", fr, wcount);
+			printf("SD WAV: Write failed %d: %d\n", fr, wcount);
 			return;
 		}
     }
@@ -144,24 +154,89 @@ void wav_close() {
 	FRESULT fr;
     fr = f_close(&fil);
     if (fr) {
-		printf("Close failed %d\n", fr);
+		printf("SD WAV: Close failed %d\n", fr);
 		return;
+	}
+}
+
+void record_audio() {
+	printf("SD WAV: Record Started\n");
+	int Status = XST_SUCCESS;
+	for (int i = 0; i < SAMPLES; ++i) {
+		Xil_DCacheFlushRange((UINTPTR)rx_buf, BUF_SIZE);
+		Status = XAxiDma_SimpleTransfer(&AxiDma, (UINTPTR) (&rx_buf[BUF_SIZE * i]),
+				BUF_SIZE, XAXIDMA_DEVICE_TO_DMA);
+		if (Status != XST_SUCCESS) {
+			print("SD WAV: failed rx transfer call\r\n");
+			return 1;
+		}
+
+		while (1) {
+			if (!(XAxiDma_Busy(&AxiDma, XAXIDMA_DEVICE_TO_DMA))) {
+				break;
+			}
+		}
+	}
+	printf("SD WAV: Record finished\nSD WAV: Write Start\n");
+	wav_write_data();
+	wav_close();
+	printf("SD WAV: Write end\n");
+}
+
+void send_data() {
+
+	for (int i = 0; i < BUF_SIZE; ++i) {
+		tx_buf[i] = i & 0xff;
+	}
+
+	Xil_DCacheFlushRange((UINTPTR)tx_buf, BUF_SIZE);
+	int Status = XST_SUCCESS;
+	Status = XAxiDma_SimpleTransfer(&AxiDma, (UINTPTR) tx_buf,
+		BUF_SIZE, XAXIDMA_DMA_TO_DEVICE);
+	if (Status != XST_SUCCESS) {
+		print("failed tx transfer call\r\n");
+		return;
+	}
+
+}
+
+void print_data() {
+	for (int i = 0; i < BUF_SIZE; ++i) {
+		rx_buf[i] = 0;
+	}
+	int Status = XST_SUCCESS;
+	Xil_DCacheFlushRange((UINTPTR)rx_buf, BUF_SIZE);
+
+	Status = XAxiDma_SimpleTransfer(&AxiDma, (UINTPTR) (rx_buf),
+			BUF_SIZE, XAXIDMA_DEVICE_TO_DMA);
+
+	if (Status != XST_SUCCESS) {
+		print("failed rx transfer call\r\n");
+		return 1;
+	}
+
+	while (1) {
+		if (!(XAxiDma_Busy(&AxiDma, XAXIDMA_DEVICE_TO_DMA))) {
+			break;
+		}
+	}
+
+	for (int i = 0; i < BUF_SIZE; i = i + 4) {
+		printf("Sample %4d: 0x%02x%02x%02x%02x\n",
+				(i/4), rx_buf[i+3], rx_buf[i+2], rx_buf[i+1], rx_buf[i]);
 	}
 }
 
 int main()
 {
-	XAxiDma_Config *CfgPtr;
-	XAxiDma AxiDma;
     init_platform();
 
     print("Hello World\n\r");
 
 	print_regs();
-	printf("Enabling I2S Left channel\n");
-	Xil_Out32(AXI_FIFO_BASE + AXI_I2S_CTR_OFFSET, I2S_ENABLE_CAPTURE | I2S_ENABLE_LEFT);
 	printf("Setting AXI transfer length to %d\n", BUF_SIZE/4);
 	Xil_Out32(AXI_FIFO_BASE + AXI_AXI_CTR_OFFSET, BUF_SIZE/4);
+	Xil_Out32(AXI_FIFO_BASE + AXI_I2S_CTR_OFFSET, I2S_ENABLE_FEEDBACK);
 	print_regs();
 
 	wav_write_header();
@@ -185,8 +260,6 @@ int main()
 		return 1;
 	}
 
-	print("DMA initialised\r\n");
-
 	Status = XAxiDma_Selftest(&AxiDma);
 	if (Status != XST_SUCCESS) {
 		print("DMA failed selftest\r\n");
@@ -198,26 +271,22 @@ int main()
 	XAxiDma_IntrDisable(&AxiDma, XAXIDMA_IRQ_ALL_MASK, XAXIDMA_DEVICE_TO_DMA);
 	XAxiDma_IntrDisable(&AxiDma, XAXIDMA_IRQ_ALL_MASK, XAXIDMA_DMA_TO_DEVICE);
 
-	printf("Record Started\n");
-	for (int i = 0; i < SAMPLES; ++i) {
-		Xil_DCacheFlushRange((UINTPTR)rx_buf, BUF_SIZE);
-		Status = XAxiDma_SimpleTransfer(&AxiDma, (UINTPTR) (&rx_buf[BUF_SIZE * i]),
-				BUF_SIZE, XAXIDMA_DEVICE_TO_DMA);
-		if (Status != XST_SUCCESS) {
-			print("failed rx transfer call\r\n");
-			return 1;
-		}
+	print("DMA initialised\r\n");
 
-		while (1) {
-			if (!(XAxiDma_Busy(&AxiDma, XAXIDMA_DEVICE_TO_DMA))) {
-				break;
-			}
-		}
-	}
-	printf("Record finished\nWrite Start\n");
-	wav_write_data();
-	wav_close();
-	printf("Write end\n");
+	printf("Writing %d values to feedback system\n", (BUF_SIZE/4) * 2);
+	send_data();
+	send_data();
+
+	printf("Enabling I2S Left channel and feedback\n");
+	Xil_Out32(AXI_FIFO_BASE + AXI_I2S_CTR_OFFSET,
+		I2S_ENABLE_CAPTURE | I2S_ENABLE_LEFT | I2S_ENABLE_FEEDBACK);
+	print_regs();
+
+	printf("Reading %d values\n", (BUF_SIZE/4) * 2);
+	print_data();
+	print_data();
+
+	print_regs();
 
     cleanup_platform();
     return 0;

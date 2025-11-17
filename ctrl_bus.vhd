@@ -21,7 +21,9 @@ entity ctrl_bus is
         -- Control bus signals (PUT YOUR REGISTERS HERE)
         ------------------------------------------------
         cb_i2s_control_reg  : out std_logic_vector(C_S_AXI_DATA_WIDTH-1 downto 0);
-        cb_status_reg       : in  std_logic_vector(C_S_AXI_DATA_WIDTH-1 downto 0);
+        cb_status_1_reg       : in  std_logic_vector(C_S_AXI_DATA_WIDTH-1 downto 0);
+        cb_status_2_reg       : in  std_logic_vector(C_S_AXI_DATA_WIDTH-1 downto 0);
+        cb_status_3_reg       : in  std_logic_vector(C_S_AXI_DATA_WIDTH-1 downto 0);
         cb_axi_control_reg  : out std_logic_vector(C_S_AXI_DATA_WIDTH-1 downto 0);
         cb_version_reg      : in  std_logic_vector(C_S_AXI_DATA_WIDTH-1 downto 0);
 
@@ -150,7 +152,9 @@ begin
 	S_AXI_RVALID	<= axi_rvalid;
     --
     cb_i2s_control_reg      <= slv_reg0;
-    slv_reg1                <= cb_status_reg;
+    slv_reg1                <= cb_status_1_reg;
+    slv_reg4                <= cb_status_2_reg;
+    slv_reg5                <= cb_status_3_reg;
     cb_axi_control_reg      <= slv_reg3;
     slv_reg2                <= cb_version_reg;
 
@@ -242,9 +246,9 @@ begin
                 slv_reg0 <= (others => '0');    -- Control Register
                 -- slv_reg1 <= x"00000000";     -- Status Register
                 -- slv_reg2 <= x"0CA7CAFE";        -- Key
-                slv_reg3 <= (others => '0');    -- Gain
-                slv_reg4 <= (others => '0');    -- Preserved 0
-                slv_reg5 <= (others => '0');    -- Preserved 1
+                slv_reg3 <= x"00000100";    -- Gain
+                -- slv_reg4 <= (others => '0');    -- Preserved 0
+                --slv_reg5 <= (others => '0');    -- Preserved 1
                 slv_reg6 <= (others => '0');    -- Preserved 2
                 slv_reg7 <= (others => '0');    -- Preserved 3
             else
@@ -289,22 +293,22 @@ begin
                         end loop;
                     when b"100" =>
                         ---- Preserved 0 register
-                        for byte_index in 0 to (C_S_AXI_DATA_WIDTH/8-1) loop
-                            if ( S_AXI_WSTRB(byte_index) = '1' ) then
+                        --for byte_index in 0 to (C_S_AXI_DATA_WIDTH/8-1) loop
+                        --    if ( S_AXI_WSTRB(byte_index) = '1' ) then
                                 -- Respective byte enables are asserted as per write strobes                   
                                 -- slave registor 4
-                                slv_reg4(byte_index*8+7 downto byte_index*8) <= S_AXI_WDATA(byte_index*8+7 downto byte_index*8);
-                            end if;
-                        end loop;
+                        --        slv_reg4(byte_index*8+7 downto byte_index*8) <= S_AXI_WDATA(byte_index*8+7 downto byte_index*8);
+                        --    end if;
+                        --end loop;
                     when b"101" =>
                         ---- Preserved 1 register
-                        for byte_index in 0 to (C_S_AXI_DATA_WIDTH/8-1) loop
-                            if ( S_AXI_WSTRB(byte_index) = '1' ) then
+                       -- for byte_index in 0 to (C_S_AXI_DATA_WIDTH/8-1) loop
+                       --     if ( S_AXI_WSTRB(byte_index) = '1' ) then
                                 -- Respective byte enables are asserted as per write strobes                   
                                 -- slave registor 5
-                                slv_reg5(byte_index*8+7 downto byte_index*8) <= S_AXI_WDATA(byte_index*8+7 downto byte_index*8);
-                            end if;
-                        end loop;
+                        --        slv_reg5(byte_index*8+7 downto byte_index*8) <= S_AXI_WDATA(byte_index*8+7 downto byte_index*8);
+                        --    end if;
+                        --end loop;
                     when b"110" =>
                         ---- Preserved 2 register
                         for byte_index in 0 to (C_S_AXI_DATA_WIDTH/8-1) loop

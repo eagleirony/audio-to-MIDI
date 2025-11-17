@@ -236,6 +236,7 @@ proc create_root_design { parentCell } {
   set pmod_i2s_dout [ create_bd_port -dir I pmod_i2s_dout ]
   set pmod_btn_sw1 [ create_bd_port -dir I pmod_btn_sw1 ]
   set pmod_led_d1 [ create_bd_port -dir O pmod_led_d1 ]
+  set pmod_i2s2_dout [ create_bd_port -dir O pmod_i2s2_dout ]
 
   # Create instance: zynq_ultra_ps_e_0, and set properties
   set zynq_ultra_ps_e_0 [ create_bd_cell -type ip -vlnv xilinx.com:ip:zynq_ultra_ps_e:3.5 zynq_ultra_ps_e_0 ]
@@ -254,39 +255,30 @@ proc create_root_design { parentCell } {
     CONFIG.PSU_MIO_11_DRIVE_STRENGTH {4} \
     CONFIG.PSU_MIO_11_SLEW {slow} \
     CONFIG.PSU_MIO_12_DRIVE_STRENGTH {4} \
+    CONFIG.PSU_MIO_12_INPUT_TYPE {cmos} \
     CONFIG.PSU_MIO_12_POLARITY {Default} \
     CONFIG.PSU_MIO_12_SLEW {slow} \
     CONFIG.PSU_MIO_13_DRIVE_STRENGTH {4} \
-    CONFIG.PSU_MIO_13_POLARITY {Default} \
     CONFIG.PSU_MIO_13_SLEW {slow} \
     CONFIG.PSU_MIO_14_DRIVE_STRENGTH {4} \
-    CONFIG.PSU_MIO_14_POLARITY {Default} \
     CONFIG.PSU_MIO_14_SLEW {slow} \
     CONFIG.PSU_MIO_15_DRIVE_STRENGTH {4} \
-    CONFIG.PSU_MIO_15_POLARITY {Default} \
     CONFIG.PSU_MIO_15_SLEW {slow} \
     CONFIG.PSU_MIO_16_DRIVE_STRENGTH {4} \
-    CONFIG.PSU_MIO_16_POLARITY {Default} \
     CONFIG.PSU_MIO_16_SLEW {slow} \
     CONFIG.PSU_MIO_17_DRIVE_STRENGTH {4} \
-    CONFIG.PSU_MIO_17_POLARITY {Default} \
     CONFIG.PSU_MIO_17_SLEW {slow} \
     CONFIG.PSU_MIO_18_DRIVE_STRENGTH {4} \
-    CONFIG.PSU_MIO_18_POLARITY {Default} \
     CONFIG.PSU_MIO_18_SLEW {slow} \
     CONFIG.PSU_MIO_19_DRIVE_STRENGTH {4} \
-    CONFIG.PSU_MIO_19_POLARITY {Default} \
     CONFIG.PSU_MIO_19_SLEW {slow} \
     CONFIG.PSU_MIO_1_DRIVE_STRENGTH {4} \
     CONFIG.PSU_MIO_1_SLEW {slow} \
     CONFIG.PSU_MIO_20_DRIVE_STRENGTH {4} \
-    CONFIG.PSU_MIO_20_POLARITY {Default} \
     CONFIG.PSU_MIO_20_SLEW {slow} \
     CONFIG.PSU_MIO_21_DRIVE_STRENGTH {4} \
-    CONFIG.PSU_MIO_21_POLARITY {Default} \
     CONFIG.PSU_MIO_21_SLEW {slow} \
     CONFIG.PSU_MIO_22_DRIVE_STRENGTH {4} \
-    CONFIG.PSU_MIO_22_POLARITY {Default} \
     CONFIG.PSU_MIO_22_SLEW {slow} \
     CONFIG.PSU_MIO_23_DRIVE_STRENGTH {4} \
     CONFIG.PSU_MIO_23_POLARITY {Default} \
@@ -322,18 +314,14 @@ proc create_root_design { parentCell } {
     CONFIG.PSU_MIO_38_POLARITY {Default} \
     CONFIG.PSU_MIO_38_SLEW {slow} \
     CONFIG.PSU_MIO_39_DRIVE_STRENGTH {4} \
-    CONFIG.PSU_MIO_39_POLARITY {Default} \
     CONFIG.PSU_MIO_39_SLEW {slow} \
     CONFIG.PSU_MIO_3_DRIVE_STRENGTH {4} \
     CONFIG.PSU_MIO_3_SLEW {slow} \
     CONFIG.PSU_MIO_40_DRIVE_STRENGTH {4} \
-    CONFIG.PSU_MIO_40_POLARITY {Default} \
     CONFIG.PSU_MIO_40_SLEW {slow} \
     CONFIG.PSU_MIO_41_DRIVE_STRENGTH {4} \
-    CONFIG.PSU_MIO_41_POLARITY {Default} \
     CONFIG.PSU_MIO_41_SLEW {slow} \
     CONFIG.PSU_MIO_42_DRIVE_STRENGTH {4} \
-    CONFIG.PSU_MIO_42_POLARITY {Default} \
     CONFIG.PSU_MIO_42_SLEW {slow} \
     CONFIG.PSU_MIO_43_DRIVE_STRENGTH {4} \
     CONFIG.PSU_MIO_43_POLARITY {Default} \
@@ -343,24 +331,18 @@ proc create_root_design { parentCell } {
     CONFIG.PSU_MIO_44_SLEW {slow} \
     CONFIG.PSU_MIO_45_POLARITY {Default} \
     CONFIG.PSU_MIO_46_DRIVE_STRENGTH {4} \
-    CONFIG.PSU_MIO_46_POLARITY {Default} \
     CONFIG.PSU_MIO_46_SLEW {slow} \
     CONFIG.PSU_MIO_47_DRIVE_STRENGTH {4} \
-    CONFIG.PSU_MIO_47_POLARITY {Default} \
     CONFIG.PSU_MIO_47_SLEW {slow} \
     CONFIG.PSU_MIO_48_DRIVE_STRENGTH {4} \
-    CONFIG.PSU_MIO_48_POLARITY {Default} \
     CONFIG.PSU_MIO_48_SLEW {slow} \
     CONFIG.PSU_MIO_49_DRIVE_STRENGTH {4} \
-    CONFIG.PSU_MIO_49_POLARITY {Default} \
     CONFIG.PSU_MIO_49_SLEW {slow} \
     CONFIG.PSU_MIO_4_DRIVE_STRENGTH {4} \
     CONFIG.PSU_MIO_4_SLEW {slow} \
     CONFIG.PSU_MIO_50_DRIVE_STRENGTH {4} \
-    CONFIG.PSU_MIO_50_POLARITY {Default} \
     CONFIG.PSU_MIO_50_SLEW {slow} \
     CONFIG.PSU_MIO_51_DRIVE_STRENGTH {4} \
-    CONFIG.PSU_MIO_51_POLARITY {Default} \
     CONFIG.PSU_MIO_51_SLEW {slow} \
     CONFIG.PSU_MIO_54_DRIVE_STRENGTH {4} \
     CONFIG.PSU_MIO_54_SLEW {slow} \
@@ -401,6 +383,7 @@ proc create_root_design { parentCell } {
     CONFIG.PSU_MIO_77_DRIVE_STRENGTH {4} \
     CONFIG.PSU_MIO_77_SLEW {slow} \
     CONFIG.PSU_MIO_7_DRIVE_STRENGTH {4} \
+    CONFIG.PSU_MIO_7_INPUT_TYPE {cmos} \
     CONFIG.PSU_MIO_7_POLARITY {Default} \
     CONFIG.PSU_MIO_7_SLEW {slow} \
     CONFIG.PSU_MIO_8_DRIVE_STRENGTH {4} \
@@ -408,11 +391,13 @@ proc create_root_design { parentCell } {
     CONFIG.PSU_MIO_8_SLEW {slow} \
     CONFIG.PSU_MIO_9_DRIVE_STRENGTH {4} \
     CONFIG.PSU_MIO_9_SLEW {slow} \
-    CONFIG.PSU_MIO_TREE_PERIPHERALS {Quad SPI Flash#Quad SPI Flash#Quad SPI Flash#Quad SPI Flash#Quad SPI Flash#Quad SPI Flash#SPI 1#GPIO0 MIO#GPIO0 MIO#SPI 1#SPI 1#SPI 1#GPIO0 MIO#GPIO0 MIO#GPIO0 MIO#GPIO0\
-MIO#GPIO0 MIO#GPIO0 MIO#GPIO0 MIO#GPIO0 MIO#GPIO0 MIO#GPIO0 MIO#GPIO0 MIO#GPIO0 MIO#I2C 1#I2C 1#PMU GPI 0#GPIO1 MIO#GPIO1 MIO#GPIO1 MIO#GPIO1 MIO#PMU GPI 5#GPIO1 MIO#GPIO1 MIO#GPIO1 MIO#PMU GPO 3#UART\
-1#UART 1#GPIO1 MIO#GPIO1 MIO#GPIO1 MIO#GPIO1 MIO#GPIO1 MIO#GPIO1 MIO#GPIO1 MIO#GPIO1 MIO#GPIO1 MIO#GPIO1 MIO#GPIO1 MIO#GPIO1 MIO#GPIO1 MIO#GPIO1 MIO##########################} \
-    CONFIG.PSU_MIO_TREE_SIGNALS {sclk_out#miso_mo1#mo2#mo3#mosi_mi0#n_ss_out#sclk_out#gpio0[7]#gpio0[8]#n_ss_out[0]#miso#mosi#gpio0[12]#gpio0[13]#gpio0[14]#gpio0[15]#gpio0[16]#gpio0[17]#gpio0[18]#gpio0[19]#gpio0[20]#gpio0[21]#gpio0[22]#gpio0[23]#scl_out#sda_out#gpi[0]#gpio1[27]#gpio1[28]#gpio1[29]#gpio1[30]#gpi[5]#gpio1[32]#gpio1[33]#gpio1[34]#gpo[3]#txd#rxd#gpio1[38]#gpio1[39]#gpio1[40]#gpio1[41]#gpio1[42]#gpio1[43]#gpio1[44]#gpio1[45]#gpio1[46]#gpio1[47]#gpio1[48]#gpio1[49]#gpio1[50]#gpio1[51]##########################}\
+    CONFIG.PSU_MIO_TREE_PERIPHERALS {Quad SPI Flash#Quad SPI Flash#Quad SPI Flash#Quad SPI Flash#Quad SPI Flash#Quad SPI Flash#SPI 1#GPIO0 MIO#GPIO0 MIO#SPI 1#SPI 1#SPI 1#GPIO0 MIO#SD 0#SD 0#SD 0#SD 0#SD\
+0#SD 0#SD 0#SD 0#SD 0#SD 0#GPIO0 MIO#I2C 1#I2C 1#PMU GPI 0#GPIO1 MIO#GPIO1 MIO#GPIO1 MIO#GPIO1 MIO#PMU GPI 5#GPIO1 MIO#GPIO1 MIO#GPIO1 MIO#PMU GPO 3#UART 1#UART 1#GPIO1 MIO#SD 1#SD 1#SD 1#SD 1#GPIO1 MIO#GPIO1\
+MIO#GPIO1 MIO#SD 1#SD 1#SD 1#SD 1#SD 1#SD 1##########################} \
+    CONFIG.PSU_MIO_TREE_SIGNALS {sclk_out#miso_mo1#mo2#mo3#mosi_mi0#n_ss_out#sclk_out#gpio0[7]#gpio0[8]#n_ss_out[0]#miso#mosi#gpio0[12]#sdio0_data_out[0]#sdio0_data_out[1]#sdio0_data_out[2]#sdio0_data_out[3]#sdio0_data_out[4]#sdio0_data_out[5]#sdio0_data_out[6]#sdio0_data_out[7]#sdio0_cmd_out#sdio0_clk_out#gpio0[23]#scl_out#sda_out#gpi[0]#gpio1[27]#gpio1[28]#gpio1[29]#gpio1[30]#gpi[5]#gpio1[32]#gpio1[33]#gpio1[34]#gpo[3]#txd#rxd#gpio1[38]#sdio1_data_out[4]#sdio1_data_out[5]#sdio1_data_out[6]#sdio1_data_out[7]#gpio1[43]#gpio1[44]#gpio1[45]#sdio1_data_out[0]#sdio1_data_out[1]#sdio1_data_out[2]#sdio1_data_out[3]#sdio1_cmd_out#sdio1_clk_out##########################}\
 \
+    CONFIG.PSU_SD0_INTERNAL_BUS_WIDTH {8} \
+    CONFIG.PSU_SD1_INTERNAL_BUS_WIDTH {8} \
     CONFIG.PSU__ACT_DDR_FREQ_MHZ {1066.656006} \
     CONFIG.PSU__AFI0_COHERENCY {0} \
     CONFIG.PSU__CAN1__PERIPHERAL__ENABLE {0} \
@@ -456,13 +441,13 @@ MIO#GPIO0 MIO#GPIO0 MIO#GPIO0 MIO#GPIO0 MIO#GPIO0 MIO#GPIO0 MIO#GPIO0 MIO#GPIO0 
     CONFIG.PSU__CRL_APB__ADMA_REF_CTRL__SRCSEL {IOPLL} \
     CONFIG.PSU__CRL_APB__AMS_REF_CTRL__ACT_FREQMHZ {49.999500} \
     CONFIG.PSU__CRL_APB__CAN1_REF_CTRL__SRCSEL {IOPLL} \
-    CONFIG.PSU__CRL_APB__CPU_R5_CTRL__ACT_FREQMHZ {533.328003} \
+    CONFIG.PSU__CRL_APB__CPU_R5_CTRL__ACT_FREQMHZ {499.994995} \
     CONFIG.PSU__CRL_APB__CPU_R5_CTRL__FREQMHZ {533.333} \
     CONFIG.PSU__CRL_APB__CPU_R5_CTRL__SRCSEL {RPLL} \
     CONFIG.PSU__CRL_APB__DBG_LPD_CTRL__ACT_FREQMHZ {249.997498} \
     CONFIG.PSU__CRL_APB__DBG_LPD_CTRL__FREQMHZ {250} \
     CONFIG.PSU__CRL_APB__DBG_LPD_CTRL__SRCSEL {IOPLL} \
-    CONFIG.PSU__CRL_APB__DLL_REF_CTRL__ACT_FREQMHZ {999.989990} \
+    CONFIG.PSU__CRL_APB__DLL_REF_CTRL__ACT_FREQMHZ {1499.984985} \
     CONFIG.PSU__CRL_APB__I2C1_REF_CTRL__ACT_FREQMHZ {99.999001} \
     CONFIG.PSU__CRL_APB__I2C1_REF_CTRL__FREQMHZ {100} \
     CONFIG.PSU__CRL_APB__I2C1_REF_CTRL__SRCSEL {IOPLL} \
@@ -476,7 +461,7 @@ MIO#GPIO0 MIO#GPIO0 MIO#GPIO0 MIO#GPIO0 MIO#GPIO0 MIO#GPIO0 MIO#GPIO0 MIO#GPIO0 
     CONFIG.PSU__CRL_APB__LPD_SWITCH_CTRL__ACT_FREQMHZ {499.994995} \
     CONFIG.PSU__CRL_APB__LPD_SWITCH_CTRL__FREQMHZ {500} \
     CONFIG.PSU__CRL_APB__LPD_SWITCH_CTRL__SRCSEL {IOPLL} \
-    CONFIG.PSU__CRL_APB__PCAP_CTRL__ACT_FREQMHZ {199.998001} \
+    CONFIG.PSU__CRL_APB__PCAP_CTRL__ACT_FREQMHZ {187.498123} \
     CONFIG.PSU__CRL_APB__PCAP_CTRL__FREQMHZ {200} \
     CONFIG.PSU__CRL_APB__PCAP_CTRL__SRCSEL {IOPLL} \
     CONFIG.PSU__CRL_APB__PL0_REF_CTRL__ACT_FREQMHZ {99.999001} \
@@ -489,7 +474,9 @@ MIO#GPIO0 MIO#GPIO0 MIO#GPIO0 MIO#GPIO0 MIO#GPIO0 MIO#GPIO0 MIO#GPIO0 MIO#GPIO0 
     CONFIG.PSU__CRL_APB__QSPI_REF_CTRL__FREQMHZ {125} \
     CONFIG.PSU__CRL_APB__QSPI_REF_CTRL__SRCSEL {IOPLL} \
     CONFIG.PSU__CRL_APB__RPLL_CTRL__SRCSEL {PSS_REF_CLK} \
-    CONFIG.PSU__CRL_APB__SPI1_REF_CTRL__ACT_FREQMHZ {199.998001} \
+    CONFIG.PSU__CRL_APB__SDIO0_REF_CTRL__ACT_FREQMHZ {199.998001} \
+    CONFIG.PSU__CRL_APB__SDIO1_REF_CTRL__ACT_FREQMHZ {199.998001} \
+    CONFIG.PSU__CRL_APB__SPI1_REF_CTRL__ACT_FREQMHZ {187.498123} \
     CONFIG.PSU__CRL_APB__SPI1_REF_CTRL__SRCSEL {IOPLL} \
     CONFIG.PSU__CRL_APB__TIMESTAMP_REF_CTRL__ACT_FREQMHZ {99.999001} \
     CONFIG.PSU__CRL_APB__TIMESTAMP_REF_CTRL__FREQMHZ {100} \
@@ -534,6 +521,7 @@ MIO#GPIO0 MIO#GPIO0 MIO#GPIO0 MIO#GPIO0 MIO#GPIO0 MIO#GPIO0 MIO#GPIO0 MIO#GPIO0 
     CONFIG.PSU__DDRC__VREF {1} \
     CONFIG.PSU__DDR_HIGH_ADDRESS_GUI_ENABLE {1} \
     CONFIG.PSU__DDR__INTERFACE__FREQMHZ {600.000} \
+    CONFIG.PSU__DLL__ISUSED {1} \
     CONFIG.PSU__FPD_SLCR__WDT1__ACT_FREQMHZ {99.999001} \
     CONFIG.PSU__FPGA_PL0_ENABLE {1} \
     CONFIG.PSU__FPGA_PL1_ENABLE {1} \
@@ -581,9 +569,9 @@ MIO#GPIO0 MIO#GPIO0 MIO#GPIO0 MIO#GPIO0 MIO#GPIO0 MIO#GPIO0 MIO#GPIO0 MIO#GPIO0 
     CONFIG.PSU__PMU__PERIPHERAL__ENABLE {1} \
     CONFIG.PSU__PMU__PLERROR__ENABLE {0} \
     CONFIG.PSU__PRESET_APPLIED {1} \
-    CONFIG.PSU__PROTECTION__MASTERS {USB1:NonSecure;0|USB0:NonSecure;0|S_AXI_LPD:NA;0|S_AXI_HPC1_FPD:NA;0|S_AXI_HPC0_FPD:NA;1|S_AXI_HP3_FPD:NA;0|S_AXI_HP2_FPD:NA;0|S_AXI_HP1_FPD:NA;0|S_AXI_HP0_FPD:NA;0|S_AXI_ACP:NA;0|S_AXI_ACE:NA;0|SD1:NonSecure;0|SD0:NonSecure;0|SATA1:NonSecure;0|SATA0:NonSecure;0|RPU1:Secure;1|RPU0:Secure;1|QSPI:NonSecure;1|PMU:NA;1|PCIe:NonSecure;0|NAND:NonSecure;0|LDMA:NonSecure;1|GPU:NonSecure;1|GEM3:NonSecure;0|GEM2:NonSecure;0|GEM1:NonSecure;0|GEM0:NonSecure;0|FDMA:NonSecure;1|DP:NonSecure;0|DAP:NA;1|Coresight:NA;1|CSU:NA;1|APU:NA;1}\
+    CONFIG.PSU__PROTECTION__MASTERS {USB1:NonSecure;0|USB0:NonSecure;0|S_AXI_LPD:NA;0|S_AXI_HPC1_FPD:NA;0|S_AXI_HPC0_FPD:NA;1|S_AXI_HP3_FPD:NA;0|S_AXI_HP2_FPD:NA;0|S_AXI_HP1_FPD:NA;0|S_AXI_HP0_FPD:NA;0|S_AXI_ACP:NA;0|S_AXI_ACE:NA;0|SD1:NonSecure;1|SD0:NonSecure;1|SATA1:NonSecure;0|SATA0:NonSecure;0|RPU1:Secure;1|RPU0:Secure;1|QSPI:NonSecure;1|PMU:NA;1|PCIe:NonSecure;0|NAND:NonSecure;0|LDMA:NonSecure;1|GPU:NonSecure;1|GEM3:NonSecure;0|GEM2:NonSecure;0|GEM1:NonSecure;0|GEM0:NonSecure;0|FDMA:NonSecure;1|DP:NonSecure;0|DAP:NA;1|Coresight:NA;1|CSU:NA;1|APU:NA;1}\
 \
-    CONFIG.PSU__PROTECTION__SLAVES {LPD;USB3_1_XHCI;FE300000;FE3FFFFF;0|LPD;USB3_1;FF9E0000;FF9EFFFF;0|LPD;USB3_0_XHCI;FE200000;FE2FFFFF;0|LPD;USB3_0;FF9D0000;FF9DFFFF;0|LPD;UART1;FF010000;FF01FFFF;1|LPD;UART0;FF000000;FF00FFFF;0|LPD;TTC3;FF140000;FF14FFFF;1|LPD;TTC2;FF130000;FF13FFFF;1|LPD;TTC1;FF120000;FF12FFFF;1|LPD;TTC0;FF110000;FF11FFFF;1|FPD;SWDT1;FD4D0000;FD4DFFFF;1|LPD;SWDT0;FF150000;FF15FFFF;1|LPD;SPI1;FF050000;FF05FFFF;1|LPD;SPI0;FF040000;FF04FFFF;0|FPD;SMMU_REG;FD5F0000;FD5FFFFF;1|FPD;SMMU;FD800000;FDFFFFFF;1|FPD;SIOU;FD3D0000;FD3DFFFF;1|FPD;SERDES;FD400000;FD47FFFF;1|LPD;SD1;FF170000;FF17FFFF;0|LPD;SD0;FF160000;FF16FFFF;0|FPD;SATA;FD0C0000;FD0CFFFF;0|LPD;RTC;FFA60000;FFA6FFFF;1|LPD;RSA_CORE;FFCE0000;FFCEFFFF;1|LPD;RPU;FF9A0000;FF9AFFFF;1|LPD;R5_TCM_RAM_GLOBAL;FFE00000;FFE3FFFF;1|LPD;R5_1_Instruction_Cache;FFEC0000;FFECFFFF;1|LPD;R5_1_Data_Cache;FFED0000;FFEDFFFF;1|LPD;R5_1_BTCM_GLOBAL;FFEB0000;FFEBFFFF;1|LPD;R5_1_ATCM_GLOBAL;FFE90000;FFE9FFFF;1|LPD;R5_0_Instruction_Cache;FFE40000;FFE4FFFF;1|LPD;R5_0_Data_Cache;FFE50000;FFE5FFFF;1|LPD;R5_0_BTCM_GLOBAL;FFE20000;FFE2FFFF;1|LPD;R5_0_ATCM_GLOBAL;FFE00000;FFE0FFFF;1|LPD;QSPI_Linear_Address;C0000000;DFFFFFFF;1|LPD;QSPI;FF0F0000;FF0FFFFF;1|LPD;PMU_RAM;FFDC0000;FFDDFFFF;1|LPD;PMU_GLOBAL;FFD80000;FFDBFFFF;1|FPD;PCIE_MAIN;FD0E0000;FD0EFFFF;0|FPD;PCIE_LOW;E0000000;EFFFFFFF;0|FPD;PCIE_HIGH2;8000000000;BFFFFFFFFF;0|FPD;PCIE_HIGH1;600000000;7FFFFFFFF;0|FPD;PCIE_DMA;FD0F0000;FD0FFFFF;0|FPD;PCIE_ATTRIB;FD480000;FD48FFFF;0|LPD;OCM_XMPU_CFG;FFA70000;FFA7FFFF;1|LPD;OCM_SLCR;FF960000;FF96FFFF;1|OCM;OCM;FFFC0000;FFFFFFFF;1|LPD;NAND;FF100000;FF10FFFF;0|LPD;MBISTJTAG;FFCF0000;FFCFFFFF;1|LPD;LPD_XPPU_SINK;FF9C0000;FF9CFFFF;1|LPD;LPD_XPPU;FF980000;FF98FFFF;1|LPD;LPD_SLCR_SECURE;FF4B0000;FF4DFFFF;1|LPD;LPD_SLCR;FF410000;FF4AFFFF;1|LPD;LPD_GPV;FE100000;FE1FFFFF;1|LPD;LPD_DMA_7;FFAF0000;FFAFFFFF;1|LPD;LPD_DMA_6;FFAE0000;FFAEFFFF;1|LPD;LPD_DMA_5;FFAD0000;FFADFFFF;1|LPD;LPD_DMA_4;FFAC0000;FFACFFFF;1|LPD;LPD_DMA_3;FFAB0000;FFABFFFF;1|LPD;LPD_DMA_2;FFAA0000;FFAAFFFF;1|LPD;LPD_DMA_1;FFA90000;FFA9FFFF;1|LPD;LPD_DMA_0;FFA80000;FFA8FFFF;1|LPD;IPI_CTRL;FF380000;FF3FFFFF;1|LPD;IOU_SLCR;FF180000;FF23FFFF;1|LPD;IOU_SECURE_SLCR;FF240000;FF24FFFF;1|LPD;IOU_SCNTRS;FF260000;FF26FFFF;1|LPD;IOU_SCNTR;FF250000;FF25FFFF;1|LPD;IOU_GPV;FE000000;FE0FFFFF;1|LPD;I2C1;FF030000;FF03FFFF;1|LPD;I2C0;FF020000;FF02FFFF;0|FPD;GPU;FD4B0000;FD4BFFFF;1|LPD;GPIO;FF0A0000;FF0AFFFF;1|LPD;GEM3;FF0E0000;FF0EFFFF;0|LPD;GEM2;FF0D0000;FF0DFFFF;0|LPD;GEM1;FF0C0000;FF0CFFFF;0|LPD;GEM0;FF0B0000;FF0BFFFF;0|FPD;FPD_XMPU_SINK;FD4F0000;FD4FFFFF;1|FPD;FPD_XMPU_CFG;FD5D0000;FD5DFFFF;1|FPD;FPD_SLCR_SECURE;FD690000;FD6CFFFF;1|FPD;FPD_SLCR;FD610000;FD68FFFF;1|FPD;FPD_DMA_CH7;FD570000;FD57FFFF;1|FPD;FPD_DMA_CH6;FD560000;FD56FFFF;1|FPD;FPD_DMA_CH5;FD550000;FD55FFFF;1|FPD;FPD_DMA_CH4;FD540000;FD54FFFF;1|FPD;FPD_DMA_CH3;FD530000;FD53FFFF;1|FPD;FPD_DMA_CH2;FD520000;FD52FFFF;1|FPD;FPD_DMA_CH1;FD510000;FD51FFFF;1|FPD;FPD_DMA_CH0;FD500000;FD50FFFF;1|LPD;EFUSE;FFCC0000;FFCCFFFF;1|FPD;Display\
+    CONFIG.PSU__PROTECTION__SLAVES {LPD;USB3_1_XHCI;FE300000;FE3FFFFF;0|LPD;USB3_1;FF9E0000;FF9EFFFF;0|LPD;USB3_0_XHCI;FE200000;FE2FFFFF;0|LPD;USB3_0;FF9D0000;FF9DFFFF;0|LPD;UART1;FF010000;FF01FFFF;1|LPD;UART0;FF000000;FF00FFFF;0|LPD;TTC3;FF140000;FF14FFFF;1|LPD;TTC2;FF130000;FF13FFFF;1|LPD;TTC1;FF120000;FF12FFFF;1|LPD;TTC0;FF110000;FF11FFFF;1|FPD;SWDT1;FD4D0000;FD4DFFFF;1|LPD;SWDT0;FF150000;FF15FFFF;1|LPD;SPI1;FF050000;FF05FFFF;1|LPD;SPI0;FF040000;FF04FFFF;0|FPD;SMMU_REG;FD5F0000;FD5FFFFF;1|FPD;SMMU;FD800000;FDFFFFFF;1|FPD;SIOU;FD3D0000;FD3DFFFF;1|FPD;SERDES;FD400000;FD47FFFF;1|LPD;SD1;FF170000;FF17FFFF;1|LPD;SD0;FF160000;FF16FFFF;1|FPD;SATA;FD0C0000;FD0CFFFF;0|LPD;RTC;FFA60000;FFA6FFFF;1|LPD;RSA_CORE;FFCE0000;FFCEFFFF;1|LPD;RPU;FF9A0000;FF9AFFFF;1|LPD;R5_TCM_RAM_GLOBAL;FFE00000;FFE3FFFF;1|LPD;R5_1_Instruction_Cache;FFEC0000;FFECFFFF;1|LPD;R5_1_Data_Cache;FFED0000;FFEDFFFF;1|LPD;R5_1_BTCM_GLOBAL;FFEB0000;FFEBFFFF;1|LPD;R5_1_ATCM_GLOBAL;FFE90000;FFE9FFFF;1|LPD;R5_0_Instruction_Cache;FFE40000;FFE4FFFF;1|LPD;R5_0_Data_Cache;FFE50000;FFE5FFFF;1|LPD;R5_0_BTCM_GLOBAL;FFE20000;FFE2FFFF;1|LPD;R5_0_ATCM_GLOBAL;FFE00000;FFE0FFFF;1|LPD;QSPI_Linear_Address;C0000000;DFFFFFFF;1|LPD;QSPI;FF0F0000;FF0FFFFF;1|LPD;PMU_RAM;FFDC0000;FFDDFFFF;1|LPD;PMU_GLOBAL;FFD80000;FFDBFFFF;1|FPD;PCIE_MAIN;FD0E0000;FD0EFFFF;0|FPD;PCIE_LOW;E0000000;EFFFFFFF;0|FPD;PCIE_HIGH2;8000000000;BFFFFFFFFF;0|FPD;PCIE_HIGH1;600000000;7FFFFFFFF;0|FPD;PCIE_DMA;FD0F0000;FD0FFFFF;0|FPD;PCIE_ATTRIB;FD480000;FD48FFFF;0|LPD;OCM_XMPU_CFG;FFA70000;FFA7FFFF;1|LPD;OCM_SLCR;FF960000;FF96FFFF;1|OCM;OCM;FFFC0000;FFFFFFFF;1|LPD;NAND;FF100000;FF10FFFF;0|LPD;MBISTJTAG;FFCF0000;FFCFFFFF;1|LPD;LPD_XPPU_SINK;FF9C0000;FF9CFFFF;1|LPD;LPD_XPPU;FF980000;FF98FFFF;1|LPD;LPD_SLCR_SECURE;FF4B0000;FF4DFFFF;1|LPD;LPD_SLCR;FF410000;FF4AFFFF;1|LPD;LPD_GPV;FE100000;FE1FFFFF;1|LPD;LPD_DMA_7;FFAF0000;FFAFFFFF;1|LPD;LPD_DMA_6;FFAE0000;FFAEFFFF;1|LPD;LPD_DMA_5;FFAD0000;FFADFFFF;1|LPD;LPD_DMA_4;FFAC0000;FFACFFFF;1|LPD;LPD_DMA_3;FFAB0000;FFABFFFF;1|LPD;LPD_DMA_2;FFAA0000;FFAAFFFF;1|LPD;LPD_DMA_1;FFA90000;FFA9FFFF;1|LPD;LPD_DMA_0;FFA80000;FFA8FFFF;1|LPD;IPI_CTRL;FF380000;FF3FFFFF;1|LPD;IOU_SLCR;FF180000;FF23FFFF;1|LPD;IOU_SECURE_SLCR;FF240000;FF24FFFF;1|LPD;IOU_SCNTRS;FF260000;FF26FFFF;1|LPD;IOU_SCNTR;FF250000;FF25FFFF;1|LPD;IOU_GPV;FE000000;FE0FFFFF;1|LPD;I2C1;FF030000;FF03FFFF;1|LPD;I2C0;FF020000;FF02FFFF;0|FPD;GPU;FD4B0000;FD4BFFFF;1|LPD;GPIO;FF0A0000;FF0AFFFF;1|LPD;GEM3;FF0E0000;FF0EFFFF;0|LPD;GEM2;FF0D0000;FF0DFFFF;0|LPD;GEM1;FF0C0000;FF0CFFFF;0|LPD;GEM0;FF0B0000;FF0BFFFF;0|FPD;FPD_XMPU_SINK;FD4F0000;FD4FFFFF;1|FPD;FPD_XMPU_CFG;FD5D0000;FD5DFFFF;1|FPD;FPD_SLCR_SECURE;FD690000;FD6CFFFF;1|FPD;FPD_SLCR;FD610000;FD68FFFF;1|FPD;FPD_DMA_CH7;FD570000;FD57FFFF;1|FPD;FPD_DMA_CH6;FD560000;FD56FFFF;1|FPD;FPD_DMA_CH5;FD550000;FD55FFFF;1|FPD;FPD_DMA_CH4;FD540000;FD54FFFF;1|FPD;FPD_DMA_CH3;FD530000;FD53FFFF;1|FPD;FPD_DMA_CH2;FD520000;FD52FFFF;1|FPD;FPD_DMA_CH1;FD510000;FD51FFFF;1|FPD;FPD_DMA_CH0;FD500000;FD50FFFF;1|LPD;EFUSE;FFCC0000;FFCCFFFF;1|FPD;Display\
 Port;FD4A0000;FD4AFFFF;0|FPD;DPDMA;FD4C0000;FD4CFFFF;0|FPD;DDR_XMPU5_CFG;FD050000;FD05FFFF;1|FPD;DDR_XMPU4_CFG;FD040000;FD04FFFF;1|FPD;DDR_XMPU3_CFG;FD030000;FD03FFFF;1|FPD;DDR_XMPU2_CFG;FD020000;FD02FFFF;1|FPD;DDR_XMPU1_CFG;FD010000;FD01FFFF;1|FPD;DDR_XMPU0_CFG;FD000000;FD00FFFF;1|FPD;DDR_QOS_CTRL;FD090000;FD09FFFF;1|FPD;DDR_PHY;FD080000;FD08FFFF;1|DDR;DDR_LOW;0;7FFFFFFF;1|DDR;DDR_HIGH;800000000;87FFFFFFF;1|FPD;DDDR_CTRL;FD070000;FD070FFF;1|LPD;Coresight;FE800000;FEFFFFFF;1|LPD;CSU_DMA;FFC80000;FFC9FFFF;1|LPD;CSU;FFCA0000;FFCAFFFF;1|LPD;CRL_APB;FF5E0000;FF85FFFF;1|FPD;CRF_APB;FD1A0000;FD2DFFFF;1|FPD;CCI_REG;FD5E0000;FD5EFFFF;1|LPD;CAN1;FF070000;FF07FFFF;0|LPD;CAN0;FF060000;FF06FFFF;0|FPD;APU;FD5C0000;FD5CFFFF;1|LPD;APM_INTC_IOU;FFA20000;FFA2FFFF;1|LPD;APM_FPD_LPD;FFA30000;FFA3FFFF;1|FPD;APM_5;FD490000;FD49FFFF;1|FPD;APM_0;FD0B0000;FD0BFFFF;1|LPD;APM2;FFA10000;FFA1FFFF;1|LPD;APM1;FFA00000;FFA0FFFF;1|LPD;AMS;FFA50000;FFA5FFFF;1|FPD;AFI_5;FD3B0000;FD3BFFFF;1|FPD;AFI_4;FD3A0000;FD3AFFFF;1|FPD;AFI_3;FD390000;FD39FFFF;1|FPD;AFI_2;FD380000;FD38FFFF;1|FPD;AFI_1;FD370000;FD37FFFF;1|FPD;AFI_0;FD360000;FD36FFFF;1|LPD;AFIFM6;FF9B0000;FF9BFFFF;1|FPD;ACPU_GIC;F9010000;F907FFFF;1}\
 \
     CONFIG.PSU__PSS_REF_CLK__FREQMHZ {33.333} \
@@ -595,6 +583,36 @@ Port;FD4A0000;FD4AFFFF;0|FPD;DPDMA;FD4C0000;FD4CFFFF;0|FPD;DDR_XMPU5_CFG;FD05000
     CONFIG.PSU__QSPI__PERIPHERAL__IO {MIO 0 .. 5} \
     CONFIG.PSU__QSPI__PERIPHERAL__MODE {Single} \
     CONFIG.PSU__SAXIGP0__DATA_WIDTH {128} \
+    CONFIG.PSU__SD0_COHERENCY {0} \
+    CONFIG.PSU__SD0_ROUTE_THROUGH_FPD {0} \
+    CONFIG.PSU__SD0__CLK_100_SDR_OTAP_DLY {0x3} \
+    CONFIG.PSU__SD0__CLK_200_SDR_OTAP_DLY {0x3} \
+    CONFIG.PSU__SD0__CLK_50_DDR_ITAP_DLY {0x3D} \
+    CONFIG.PSU__SD0__CLK_50_DDR_OTAP_DLY {0x4} \
+    CONFIG.PSU__SD0__CLK_50_SDR_ITAP_DLY {0x15} \
+    CONFIG.PSU__SD0__CLK_50_SDR_OTAP_DLY {0x5} \
+    CONFIG.PSU__SD0__DATA_TRANSFER_MODE {8Bit} \
+    CONFIG.PSU__SD0__GRP_CD__ENABLE {0} \
+    CONFIG.PSU__SD0__GRP_POW__ENABLE {0} \
+    CONFIG.PSU__SD0__GRP_WP__ENABLE {0} \
+    CONFIG.PSU__SD0__PERIPHERAL__ENABLE {1} \
+    CONFIG.PSU__SD0__PERIPHERAL__IO {MIO 13 .. 22} \
+    CONFIG.PSU__SD0__SLOT_TYPE {SD 3.0} \
+    CONFIG.PSU__SD1_COHERENCY {0} \
+    CONFIG.PSU__SD1_ROUTE_THROUGH_FPD {0} \
+    CONFIG.PSU__SD1__CLK_100_SDR_OTAP_DLY {0x3} \
+    CONFIG.PSU__SD1__CLK_200_SDR_OTAP_DLY {0x3} \
+    CONFIG.PSU__SD1__CLK_50_DDR_ITAP_DLY {0x3D} \
+    CONFIG.PSU__SD1__CLK_50_DDR_OTAP_DLY {0x4} \
+    CONFIG.PSU__SD1__CLK_50_SDR_ITAP_DLY {0x15} \
+    CONFIG.PSU__SD1__CLK_50_SDR_OTAP_DLY {0x5} \
+    CONFIG.PSU__SD1__DATA_TRANSFER_MODE {8Bit} \
+    CONFIG.PSU__SD1__GRP_CD__ENABLE {0} \
+    CONFIG.PSU__SD1__GRP_POW__ENABLE {0} \
+    CONFIG.PSU__SD1__GRP_WP__ENABLE {0} \
+    CONFIG.PSU__SD1__PERIPHERAL__ENABLE {1} \
+    CONFIG.PSU__SD1__PERIPHERAL__IO {MIO 39 .. 51} \
+    CONFIG.PSU__SD1__SLOT_TYPE {SD 3.0} \
     CONFIG.PSU__SPI1__GRP_SS0__IO {MIO 9} \
     CONFIG.PSU__SPI1__GRP_SS1__ENABLE {0} \
     CONFIG.PSU__SPI1__GRP_SS2__ENABLE {0} \
@@ -634,7 +652,7 @@ Port;FD4A0000;FD4AFFFF;0|FPD;DPDMA;FD4C0000;FD4CFFFF;0|FPD;DDR_XMPU5_CFG;FD05000
   # Create instance: axi_dma_0, and set properties
   set axi_dma_0 [ create_bd_cell -type ip -vlnv xilinx.com:ip:axi_dma:7.1 axi_dma_0 ]
   set_property -dict [list \
-    CONFIG.c_include_mm2s {0} \
+    CONFIG.c_include_mm2s {1} \
     CONFIG.c_include_sg {0} \
   ] $axi_dma_0
 
@@ -662,12 +680,14 @@ Port;FD4A0000;FD4AFFFF;0|FPD;DPDMA;FD4C0000;FD4CFFFF;0|FPD;DDR_XMPU5_CFG;FD05000
   set axi_smc [ create_bd_cell -type ip -vlnv xilinx.com:ip:smartconnect:1.0 axi_smc ]
   set_property -dict [list \
     CONFIG.NUM_MI {1} \
-    CONFIG.NUM_SI {1} \
+    CONFIG.NUM_SI {2} \
   ] $axi_smc
 
 
   # Create interface connections
-  connect_bd_intf_net -intf_net audio_pipeline_0_axis [get_bd_intf_pins audio_pipeline_0/axis] [get_bd_intf_pins axi_dma_0/S_AXIS_S2MM]
+  connect_bd_intf_net -intf_net audio_pipeline_0_axis [get_bd_intf_pins audio_pipeline_0/axis_o] [get_bd_intf_pins axi_dma_0/S_AXIS_S2MM]
+  connect_bd_intf_net -intf_net axi_dma_0_M_AXIS_MM2S [get_bd_intf_pins axi_dma_0/M_AXIS_MM2S] [get_bd_intf_pins audio_pipeline_0/axis_i]
+  connect_bd_intf_net -intf_net axi_dma_0_M_AXI_MM2S [get_bd_intf_pins axi_dma_0/M_AXI_MM2S] [get_bd_intf_pins axi_smc/S01_AXI]
   connect_bd_intf_net -intf_net axi_dma_0_M_AXI_S2MM [get_bd_intf_pins axi_dma_0/M_AXI_S2MM] [get_bd_intf_pins axi_smc/S00_AXI]
   connect_bd_intf_net -intf_net axi_smc_M00_AXI [get_bd_intf_pins axi_smc/M00_AXI] [get_bd_intf_pins zynq_ultra_ps_e_0/S_AXI_HPC0_FPD]
   connect_bd_intf_net -intf_net ps8_0_axi_periph_M00_AXI [get_bd_intf_pins ps8_0_axi_periph/M00_AXI] [get_bd_intf_pins audio_pipeline_0/s00_axi]
@@ -675,56 +695,67 @@ Port;FD4A0000;FD4AFFFF;0|FPD;DPDMA;FD4C0000;FD4CFFFF;0|FPD;DDR_XMPU5_CFG;FD05000
   connect_bd_intf_net -intf_net zynq_ultra_ps_e_0_M_AXI_HPM0_FPD [get_bd_intf_pins zynq_ultra_ps_e_0/M_AXI_HPM0_FPD] [get_bd_intf_pins ps8_0_axi_periph/S00_AXI]
 
   # Create port connections
+  connect_bd_net -net audio_pipeline_0_i2s2_dout [get_bd_pins audio_pipeline_0/i2s2_dout] [get_bd_ports pmod_i2s2_dout]
   connect_bd_net -net audio_pipeline_0_i2s_bclk [get_bd_pins audio_pipeline_0/i2s_bclk] [get_bd_ports pmod_i2s_bclk]
   connect_bd_net -net audio_pipeline_0_i2s_lrcl [get_bd_pins audio_pipeline_0/i2s_lrcl] [get_bd_ports pmod_i2s_lrclk]
+  connect_bd_net -net audio_pipeline_0_pmod_led_d1 [get_bd_pins audio_pipeline_0/pmod_led_d1] [get_bd_ports pmod_led_d1]
   connect_bd_net -net pmod_i2s_dout_1 [get_bd_ports pmod_i2s_dout] [get_bd_pins audio_pipeline_0/i2s_dout]
   connect_bd_net -net rst_ps8_0_99M_peripheral_aresetn [get_bd_pins rst_ps8_0_99M/peripheral_aresetn] [get_bd_pins ps8_0_axi_periph/S00_ARESETN] [get_bd_pins ps8_0_axi_periph/M00_ARESETN] [get_bd_pins ps8_0_axi_periph/ARESETN] [get_bd_pins axi_dma_0/axi_resetn] [get_bd_pins ps8_0_axi_periph/M01_ARESETN] [get_bd_pins axi_smc/aresetn] [get_bd_pins ps8_0_axi_periph/M02_ARESETN] [get_bd_pins audio_pipeline_0/rst] [get_bd_pins audio_pipeline_0/s00_axi_aresetn]
-  connect_bd_net -net zynq_ultra_ps_e_0_pl_clk0 [get_bd_pins zynq_ultra_ps_e_0/pl_clk0] [get_bd_pins zynq_ultra_ps_e_0/maxihpm0_fpd_aclk] [get_bd_pins ps8_0_axi_periph/S00_ACLK] [get_bd_pins rst_ps8_0_99M/slowest_sync_clk] [get_bd_pins ps8_0_axi_periph/M00_ACLK] [get_bd_pins ps8_0_axi_periph/ACLK] [get_bd_pins axi_dma_0/s_axi_lite_aclk] [get_bd_pins ps8_0_axi_periph/M01_ACLK] [get_bd_pins axi_dma_0/m_axi_s2mm_aclk] [get_bd_pins axi_smc/aclk] [get_bd_pins zynq_ultra_ps_e_0/saxihpc0_fpd_aclk] [get_bd_pins ps8_0_axi_periph/M02_ACLK] [get_bd_pins audio_pipeline_0/clk] [get_bd_pins audio_pipeline_0/s00_axi_aclk]
+  connect_bd_net -net zynq_ultra_ps_e_0_pl_clk0 [get_bd_pins zynq_ultra_ps_e_0/pl_clk0] [get_bd_pins zynq_ultra_ps_e_0/maxihpm0_fpd_aclk] [get_bd_pins ps8_0_axi_periph/S00_ACLK] [get_bd_pins rst_ps8_0_99M/slowest_sync_clk] [get_bd_pins ps8_0_axi_periph/M00_ACLK] [get_bd_pins ps8_0_axi_periph/ACLK] [get_bd_pins axi_dma_0/s_axi_lite_aclk] [get_bd_pins ps8_0_axi_periph/M01_ACLK] [get_bd_pins axi_dma_0/m_axi_s2mm_aclk] [get_bd_pins axi_smc/aclk] [get_bd_pins zynq_ultra_ps_e_0/saxihpc0_fpd_aclk] [get_bd_pins ps8_0_axi_periph/M02_ACLK] [get_bd_pins axi_dma_0/m_axi_mm2s_aclk] [get_bd_pins audio_pipeline_0/clk] [get_bd_pins audio_pipeline_0/s00_axi_aclk]
   connect_bd_net -net zynq_ultra_ps_e_0_pl_resetn0 [get_bd_pins zynq_ultra_ps_e_0/pl_resetn0] [get_bd_pins rst_ps8_0_99M/ext_reset_in]
 
   # Create address segments
   assign_bd_address -offset 0xA0000000 -range 0x00001000 -target_address_space [get_bd_addr_spaces zynq_ultra_ps_e_0/Data] [get_bd_addr_segs audio_pipeline_0/s00_axi/reg0] -force
   assign_bd_address -offset 0xA0010000 -range 0x00010000 -target_address_space [get_bd_addr_spaces zynq_ultra_ps_e_0/Data] [get_bd_addr_segs axi_dma_0/S_AXI_LITE/Reg] -force
+  assign_bd_address -offset 0x00000000 -range 0x80000000 -target_address_space [get_bd_addr_spaces axi_dma_0/Data_MM2S] [get_bd_addr_segs zynq_ultra_ps_e_0/SAXIGP0/HPC0_DDR_LOW] -force
+  assign_bd_address -offset 0xC0000000 -range 0x20000000 -target_address_space [get_bd_addr_spaces axi_dma_0/Data_MM2S] [get_bd_addr_segs zynq_ultra_ps_e_0/SAXIGP0/HPC0_QSPI] -force
   assign_bd_address -offset 0x00000000 -range 0x80000000 -target_address_space [get_bd_addr_spaces axi_dma_0/Data_S2MM] [get_bd_addr_segs zynq_ultra_ps_e_0/SAXIGP0/HPC0_DDR_LOW] -force
   assign_bd_address -offset 0xC0000000 -range 0x20000000 -target_address_space [get_bd_addr_spaces axi_dma_0/Data_S2MM] [get_bd_addr_segs zynq_ultra_ps_e_0/SAXIGP0/HPC0_QSPI] -force
 
   # Exclude Address Segments
-  exclude_bd_addr_seg -target_address_space [get_bd_addr_spaces axi_dma_0/Data_S2MM] [get_bd_addr_segs zynq_ultra_ps_e_0/SAXIGP0/HPC0_DDR_HIGH]
+  exclude_bd_addr_seg -target_address_space [get_bd_addr_spaces axi_dma_0/Data_MM2S] [get_bd_addr_segs zynq_ultra_ps_e_0/SAXIGP0/HPC0_DDR_HIGH]
+  exclude_bd_addr_seg -offset 0xFF000000 -range 0x01000000 -target_address_space [get_bd_addr_spaces axi_dma_0/Data_MM2S] [get_bd_addr_segs zynq_ultra_ps_e_0/SAXIGP0/HPC0_LPS_OCM]
+  exclude_bd_addr_seg -offset 0x000800000000 -range 0x000100000000 -target_address_space [get_bd_addr_spaces axi_dma_0/Data_S2MM] [get_bd_addr_segs zynq_ultra_ps_e_0/SAXIGP0/HPC0_DDR_HIGH]
   exclude_bd_addr_seg -offset 0xFF000000 -range 0x01000000 -target_address_space [get_bd_addr_spaces axi_dma_0/Data_S2MM] [get_bd_addr_segs zynq_ultra_ps_e_0/SAXIGP0/HPC0_LPS_OCM]
 
   # Perform GUI Layout
   regenerate_bd_layout -layout_string {
    "ActiveEmotionalView":"Default View",
-   "Default View_ScaleFactor":"1.73495",
-   "Default View_TopLeft":"1880,57",
+   "Default View_ScaleFactor":"1.1475",
+   "Default View_TopLeft":"1898,141",
    "ExpandedHierarchyInLayout":"",
    "guistr":"# # String gsaved with Nlview 7.7.1 2023-07-26 3bc4126617 VDI=43 GEI=38 GUI=JA:21.0
 #  -string -flagsOSRD
-preplace port port-id_pmod_i2s_lrclk -pg 1 -lvl 7 -x 2400 -y 190 -defaultsOSRD
-preplace port port-id_pmod_i2s_bclk -pg 1 -lvl 7 -x 2400 -y 170 -defaultsOSRD
-preplace port port-id_pmod_i2s_dout -pg 1 -lvl 0 -x -10 -y 90 -defaultsOSRD
-preplace port port-id_pmod_btn_sw1 -pg 1 -lvl 0 -x -10 -y 110 -defaultsOSRD
-preplace port port-id_pmod_led_d1 -pg 1 -lvl 7 -x 2400 -y 320 -defaultsOSRD
-preplace inst zynq_ultra_ps_e_0 -pg 1 -lvl 4 -x 1330 -y 580 -defaultsOSRD
-preplace inst axi_dma_0 -pg 1 -lvl 2 -x 550 -y 550 -defaultsOSRD
-preplace inst audio_pipeline_0 -pg 1 -lvl 6 -x 2210 -y 140 -defaultsOSRD
-preplace inst ps8_0_axi_periph -pg 1 -lvl 5 -x 1820 -y 270 -defaultsOSRD
-preplace inst rst_ps8_0_99M -pg 1 -lvl 1 -x 200 -y 550 -defaultsOSRD
-preplace inst axi_smc -pg 1 -lvl 3 -x 880 -y 550 -defaultsOSRD
-preplace netloc audio_pipeline_0_i2s_bclk 1 6 1 2370J 140n
-preplace netloc audio_pipeline_0_i2s_lrcl 1 6 1 2360J 160n
-preplace netloc pmod_i2s_dout_1 1 0 6 NJ 90 NJ 90 NJ 90 NJ 90 NJ 90 1960J
-preplace netloc rst_ps8_0_99M_peripheral_aresetn 1 1 5 390 650 740 370 NJ 370 1660 100 2050
-preplace netloc zynq_ultra_ps_e_0_pl_clk0 1 0 6 20 650 380 660 750 630 1040 490 1670 110 2070
-preplace netloc zynq_ultra_ps_e_0_pl_resetn0 1 0 5 30 670 NJ 670 NJ 670 NJ 670 1620
-preplace netloc audio_pipeline_0_axis 1 1 6 390 440 NJ 440 NJ 440 NJ 440 NJ 440 2350
-preplace netloc axi_dma_0_M_AXI_S2MM 1 2 1 N 530
+preplace port port-id_pmod_i2s_lrclk -pg 1 -lvl 7 -x 2520 -y 190 -defaultsOSRD
+preplace port port-id_pmod_i2s_bclk -pg 1 -lvl 7 -x 2520 -y 170 -defaultsOSRD
+preplace port port-id_pmod_i2s_dout -pg 1 -lvl 0 -x -270 -y 90 -defaultsOSRD
+preplace port port-id_pmod_btn_sw1 -pg 1 -lvl 0 -x -270 -y 110 -defaultsOSRD
+preplace port port-id_pmod_led_d1 -pg 1 -lvl 7 -x 2520 -y 320 -defaultsOSRD
+preplace port port-id_pmod_i2s2_dout -pg 1 -lvl 7 -x 2520 -y 260 -defaultsOSRD
+preplace inst zynq_ultra_ps_e_0 -pg 1 -lvl 4 -x 1410 -y 580 -defaultsOSRD
+preplace inst axi_dma_0 -pg 1 -lvl 2 -x 580 -y 560 -defaultsOSRD
+preplace inst audio_pipeline_0 -pg 1 -lvl 6 -x 2310 -y 370 -defaultsOSRD
+preplace inst ps8_0_axi_periph -pg 1 -lvl 5 -x 1910 -y 270 -defaultsOSRD
+preplace inst rst_ps8_0_99M -pg 1 -lvl 1 -x -70 -y 540 -defaultsOSRD
+preplace inst axi_smc -pg 1 -lvl 3 -x 960 -y 550 -defaultsOSRD
+preplace netloc audio_pipeline_0_i2s2_dout 1 6 1 2490 260n
+preplace netloc audio_pipeline_0_i2s_bclk 1 6 1 2470J 170n
+preplace netloc audio_pipeline_0_i2s_lrcl 1 6 1 2480J 190n
+preplace netloc audio_pipeline_0_pmod_led_d1 1 6 1 2500 320n
+preplace netloc pmod_i2s_dout_1 1 0 6 NJ 90 N 90 N 90 NJ 90 NJ 90 2090J
+preplace netloc rst_ps8_0_99M_peripheral_aresetn 1 1 5 410 720 820 460 NJ 460 1770 460 2160
+preplace netloc zynq_ultra_ps_e_0_pl_clk0 1 0 6 -250 640 420 730 830 640 1120 490 1760 470 2150
+preplace netloc zynq_ultra_ps_e_0_pl_resetn0 1 0 5 -240 740 N 740 N 740 NJ 740 1700
+preplace netloc audio_pipeline_0_axis 1 1 6 410 390 NJ 390 NJ 390 1710J 430 2070J 250 2460
+preplace netloc axi_dma_0_M_AXIS_MM2S 1 2 4 740 450 NJ 450 NJ 450 2080J
+preplace netloc axi_dma_0_M_AXI_MM2S 1 2 1 750 500n
+preplace netloc axi_dma_0_M_AXI_S2MM 1 2 1 N 520
 preplace netloc axi_smc_M00_AXI 1 3 1 N 550
-preplace netloc ps8_0_axi_periph_M00_AXI 1 5 1 2060 90n
-preplace netloc ps8_0_axi_periph_M01_AXI 1 1 5 380 430 NJ 430 NJ 430 NJ 430 1960
-preplace netloc zynq_ultra_ps_e_0_M_AXI_HPM0_FPD 1 4 1 1680 170n
-levelinfo -pg 1 -10 200 550 880 1330 1820 2210 2400
-pagesize -pg 1 -db -bbox -sgen -160 0 2550 950
+preplace netloc ps8_0_axi_periph_M00_AXI 1 5 1 2060 250n
+preplace netloc ps8_0_axi_periph_M01_AXI 1 1 5 420 400 740 440 NJ 440 NJ 440 2050
+preplace netloc zynq_ultra_ps_e_0_M_AXI_HPM0_FPD 1 4 1 1700 170n
+levelinfo -pg 1 -270 -70 580 960 1410 1910 2310 2520
+pagesize -pg 1 -db -bbox -sgen -420 0 2730 950
 "
 }
 

@@ -39,7 +39,7 @@ architecture arch of fifo is
     signal sig_empty : std_logic;
     
     signal sig_din     : std_logic_vector(DATA_WIDTH-1 downto 0);
-    signal sig_dout    : std_logic_vector(DATA_WIDTH-1 downto 0);
+    signal sig_dout    : std_logic_vector(DATA_WIDTH-1 downto 0) := x"DEADC0DE";
 
 begin
 
@@ -80,10 +80,10 @@ begin
 
     process (clkr, clkw)
     begin
-        if (rst = '1') then
+        if (rst = '0') then
             rdp <= (others => '0');
             wrp <= (others => '0');
-            sig_dout <= (others => '0');
+            sig_dout <= x"DEADC0DE";
         else
             if rising_edge(clkr) then
                 if (rd = '1' and sig_empty = '0') then

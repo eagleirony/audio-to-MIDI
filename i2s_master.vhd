@@ -18,7 +18,7 @@ entity i2s_master is
     );
     port (
         clk             : in  std_logic;
-        ctr_reg         : in  std_logic_vector(DATA_WIDTH-1 downto 0);
+        ctr_reg         : in  std_logic_vector(5 downto 0);
 
         -- I2S interface to MEMs mic
         i2s_lrcl        : out std_logic;    -- left/right clk (word sel): 0 = left, 1 = right
@@ -45,10 +45,10 @@ architecture Behavioral of i2s_master is
     signal sig_write_fifo       : std_logic := '0';
     signal sig_fifo_reg         : std_logic_vector(DATA_WIDTH-1 downto 0);
     
-    signal sig_ctr  : std_logic_vector(DATA_WIDTH-1 downto 0);
+    signal sig_ctr  : std_logic_vector(5 downto 0);
     
     type state_t is (reading, switching, writing_l, writing_r);
-    signal curr, nxt : state_t := reading;
+    signal curr : state_t := reading;
     
 begin
 
@@ -106,31 +106,31 @@ begin
     
     process (clk, sig_lrclk)
     begin
-        if falling_edge(clk) then
-            curr <= nxt;
+        if rising_edge(clk) then
+            curr <= curr;
             case curr is
                 when reading =>
-                    nxt <= reading;
+                    curr <= reading;
                     if sig_prev_lrclk /= sig_lrclk then
                         sig_prev_lrclk <= sig_lrclk;
                         if sig_ctr(0) = '1' then
-                            nxt <= switching;
+                            curr <= switching;
                         end if;
                     end if;
                when switching =>
-                    nxt <= switching;
+                    curr <= switching;
                     if sig_prev_bclk /= sig_bclk then
                         sig_prev_bclk <= sig_bclk;
                         if sig_bclk = '1' then
-                            nxt <= writing_l;
+                            curr <= writing_l;
                         else
-                            nxt <= writing_r;
+                            curr <= writing_r;
                         end if;
                     end if;
                when writing_l =>
-                    nxt <= reading;
+                    curr <= reading;
                when writing_r =>
-                    nxt <= reading;
+                    curr <= reading;
             end case;
         end if;
     end process;

@@ -25,14 +25,24 @@ entity audio_pipeline is
         i2s_bclk        : out std_logic;
         i2s_lrcl        : out std_logic;
         i2s_dout        : in  std_logic;
+        i2s2_dout       : out std_logic;
+        pmod_led_d1     : out std_logic;
 
         --------------------------------------------------
-        -- AXI4-Stream
+        -- AXI4-Stream out
         --------------------------------------------------
-        axis_tdata      : out std_logic_vector(DATA_WIDTH-1 downto 0);
-        axis_tvalid     : out std_logic;
-        axis_tready     : in  std_logic;
-        axis_tlast      : out std_logic;
+        axis_o_tdata      : out std_logic_vector(DATA_WIDTH-1 downto 0);
+        axis_o_tvalid     : out std_logic;
+        axis_o_tready     : in  std_logic;
+        axis_o_tlast      : out std_logic;
+        
+        --------------------------------------------------
+        -- AXI4-Stream In
+        --------------------------------------------------
+        axis_i_tdata      : in  std_logic_vector(DATA_WIDTH-1 downto 0);
+        axis_i_tvalid     : in  std_logic;
+        axis_i_tready     : out std_logic;
+        axis_i_tlast      : in  std_logic;
         
         --------------------------------------------------
         -- Control interface (AXI4-Lite)
@@ -63,35 +73,60 @@ end audio_pipeline;
 
 architecture Behavioural of audio_pipeline is
     --------------------------------------------------
-    -- FIFO
+    -- Data FIFO
     --------------------------------------------------
-    signal sig_fifo_rst             : std_logic;
-    signal sig_fifo_wr              : std_logic;
-    signal sig_fifo_rd              : std_logic;
-    signal sig_fifo_full            : std_logic;
-    signal sig_fifo_empty           : std_logic;
-    signal sig_fifo_data_w          : std_logic_vector(DATA_WIDTH-1 downto 0);
-    signal sig_fifo_data_r          : std_logic_vector(DATA_WIDTH-1 downto 0);
-
+    signal sig_dfifo_rst             : std_logic;
+    signal sig_dfifo_wr              : std_logic;
+    signal sig_dfifo_rd              : std_logic;
+    signal sig_dfifo_full            : std_logic;
+    signal sig_dfifo_empty           : std_logic;
+    signal sig_dfifo_data_w          : std_logic_vector(DATA_WIDTH-1 downto 0);
+    signal sig_dfifo_data_r          : std_logic_vector(DATA_WIDTH-1 downto 0);
+    
     --------------------------------------------------
-    -- AXI4-Stream
+    -- Feedback FIFO
     --------------------------------------------------
-    signal sig_axis_tdata           : std_logic_vector(DATA_WIDTH-1 downto 0);
-    signal sig_axis_tvalid          : std_logic;
-    signal sig_axis_tready          : std_logic;
-    signal sig_axis_tlast           : std_logic;
+    signal sig_fbfifo_rst             : std_logic;
+    signal sig_fbfifo_wr              : std_logic;
+    signal sig_fbfifo_rd              : std_logic;
+    signal sig_fbfifo_full            : std_logic;
+    signal sig_fbfifo_empty           : std_logic;
+    signal sig_fbfifo_data_w          : std_logic_vector(DATA_WIDTH-1 downto 0);
+    signal sig_fbfifo_data_r          : std_logic_vector(DATA_WIDTH-1 downto 0);
 
     --------------------------------------------------
     -- Control interface (AXI4-Lite)
     --------------------------------------------------
     signal sig_i2s_control_reg          : std_logic_vector(DATA_WIDTH-1 downto 0);
-    signal sig_status_reg           : std_logic_vector(DATA_WIDTH-1 downto 0);
+    signal sig_status_1_reg           : std_logic_vector(DATA_WIDTH-1 downto 0);
+    signal sig_status_2_reg           : std_logic_vector(DATA_WIDTH-1 downto 0);
     signal sig_axi_control_reg             : std_logic_vector(DATA_WIDTH-1 downto 0);
     signal sig_version_reg             : std_logic_vector(DATA_WIDTH-1 downto 0);
 
+    signal sig_i2s_mic_d : std_logic;
+    signal sig_i2s_slv_d : std_logic;
+    signal sig_i2s_d_mux : std_logic;
+    
+    signal sig_m_axis_status       : std_logic_vector(DATA_WIDTH-1 downto 0);
 
+    signal sig_i2s_lrclk : std_logic;
+    signal sig_i2s_bclk : std_logic;
+    
+    type axis_in_state_t is (transferring, last, wait_on_ready, wait_on_fifo, read_fifo);
+    signal axis_in_curr : axis_in_state_t := wait_on_fifo;
+    
+    signal transfer_cnt : integer;
+    
 begin
-    sig_version_reg <= "00000000000000000000000000000010";
+    sig_version_reg <= x"00000015";
+    
+    i2s2_dout <= sig_i2s_d_mux;
+    pmod_led_d1 <= sig_i2s_control_reg(6);
+    
+    sig_i2s_mic_d <= i2s_dout;
+    i2s_bclk <= sig_i2s_bclk;
+    i2s_lrcl <= sig_i2s_lrclk;
+    
     --------------------------------------------------
     -- Control bus
     --------------------------------------------------
@@ -102,7 +137,9 @@ begin
 	)
 	port map (
         cb_i2s_control_reg  => sig_i2s_control_reg,
-        cb_status_reg   => sig_status_reg,
+        cb_status_1_reg   => sig_status_1_reg,
+        cb_status_2_reg   => sig_status_2_reg,
+        cb_status_3_reg    => sig_m_axis_status,
         cb_axi_control_reg     => sig_axi_control_reg,
         cb_version_reg => sig_version_reg,
 
@@ -129,8 +166,7 @@ begin
 		S_AXI_RREADY	=> s00_axi_rready
 	);
 
-    -- sig_fifo_rst <= not rst; -- AXIS reset is active low
-    sig_fifo_rst <= '0';
+    sig_i2s_d_mux <= sig_i2s_slv_d when sig_i2s_control_reg(6) = '1' else sig_i2s_mic_d;
 
     --------------------------------------------------
     -- I2S Master
@@ -142,72 +178,109 @@ begin
     )
     port map (
         clk             => clk,
-        ctr_reg         => sig_i2s_control_reg,
+        ctr_reg         => sig_i2s_control_reg(5 downto 0),
 
-        i2s_lrcl        => i2s_lrcl,
-        i2s_dout        => i2s_dout,
-        i2s_bclk        => i2s_bclk,
+        i2s_lrcl        => sig_i2s_lrclk,
+        i2s_dout        => sig_i2s_d_mux,
+        i2s_bclk        => sig_i2s_bclk,
 
-        fifo_din        => sig_fifo_data_w,
-        fifo_w_stb      => sig_fifo_wr,
-        fifo_full       => sig_fifo_full
+        fifo_din        => sig_dfifo_data_w,
+        fifo_w_stb      => sig_dfifo_wr,
+        fifo_full       => sig_dfifo_full
     );
 
     --------------------------------------------------
-    -- FIFO
+    -- Data FIFO
     --------------------------------------------------
-    inst_fifo : fifo 
+    data_fifo : fifo 
     generic map (
         data_width => DATA_WIDTH,
         fifo_depth => FIFO_DEPTH
     ) port map (
         clkw            => clk,
         clkr            => clk,
-        rst             => sig_fifo_rst,
+        rst             => rst,
 
-        wr              => sig_fifo_wr,
-        din             => sig_fifo_data_w,
-        full            => sig_fifo_full,
+        wr              => sig_dfifo_wr,
+        din             => sig_dfifo_data_w,
+        full            => sig_dfifo_full,
 
-        rd              => sig_fifo_rd,
-        dout            => sig_fifo_data_r,
-        empty           => sig_fifo_empty,
-        status          => sig_status_reg
+        rd              => sig_dfifo_rd,
+        dout            => sig_dfifo_data_r,
+        empty           => sig_dfifo_empty,
+        status          => sig_status_1_reg
+    );
+    
+    
+    --------------------------------------------------
+    -- Feedback i2s slave
+    --------------------------------------------------
+    feedback_i2s_slave: i2s_slave port map (
+      clk => clk,
+      ctr_reg => sig_i2s_control_reg(5 downto 0),
+      i2s_lrcl => sig_i2s_lrclk,
+      i2s_dout => sig_i2s_slv_d,
+      i2s_bclk => sig_i2s_bclk,
+      fifo_dout => sig_fbfifo_data_r,
+      fifo_r_stb => sig_fbfifo_rd,
+      fifo_empty => sig_fbfifo_empty
     );
 
     --------------------------------------------------
-    -- FIFO to AXIS
+    -- Feedback FIFO
     --------------------------------------------------
-    -- FIFO read
-    sig_fifo_rd <= (not sig_fifo_empty) and sig_axis_tvalid and axis_tready;
-    sig_axis_tvalid <= '1' when sig_fifo_empty = '0' else '0';
-    axis_tvalid <= sig_axis_tvalid;
+    feedback_fifo : fifo 
+    generic map (
+        data_width => DATA_WIDTH,
+        fifo_depth => FIFO_DEPTH
+    ) port map (
+        clkw            => clk,
+        clkr            => clk,
+        rst             => rst,
+
+        wr              => sig_fbfifo_wr,
+        din             => sig_fbfifo_data_w,
+        full            => sig_fbfifo_full,
+
+        rd              => sig_fbfifo_rd,
+        dout            => sig_fbfifo_data_r,
+        empty           => sig_fbfifo_empty,
+        status          => sig_status_2_reg
+    );
+
+    --------------------------------------------------
+    -- AXIS to Feedback FIFO
+    --------------------------------------------------
+
+    axis_s : axis_slave port map (
+        clk => clk,
+        rst => rst,
+        axis_tdata => axis_i_tdata,
+        axis_tvalid => axis_i_tvalid,
+        axis_tready => axis_i_tready,
+        axis_tlast => axis_i_tlast,
+        fifo_wr => sig_fbfifo_wr,
+        fifo_full => sig_fbfifo_full,
+        fifo_data => sig_fbfifo_data_w,
+        axi_control_reg => sig_axi_control_reg
+    );
+
+    --------------------------------------------------
+    -- Data FIFO to AXIS
+    --------------------------------------------------
     
-    -- TLAST
-    process (clk)
-        -- variable v_cnt : unsigned(3 downto 0) := (others => '0');
-        variable v_cnt : integer := 0;
-    begin
-        if (rst = '0') then
-            v_cnt := 0;
-        elsif rising_edge(clk) then
-            if ((sig_axis_tvalid and axis_tready) = '1') then
-                v_cnt := v_cnt + 1;
-                
-                if (v_cnt = to_integer(unsigned(sig_axi_control_reg))) then
-                    axis_tlast <= '1';
-                    v_cnt := 0;
-                else
-                    axis_tlast <= '0';
-                end if;
-            end if;
-        end if;
-    end process;
-    -- axis_tlast <= '1';
-
-    -- TDATA
-    -- axis_tdata <= sig_fifo_data_r when (sig_axis_tvalid and axis_tready) = '1' else (others => '0');
-    axis_tdata <= sig_fifo_data_r;
-
+    axis_m : axis_master port map (
+        clk => clk,
+        rst => rst,
+        axis_tdata => axis_o_tdata,
+        axis_tvalid => axis_o_tvalid,
+        axis_tready => axis_o_tready,
+        axis_tlast => axis_o_tlast,
+        fifo_rd => sig_dfifo_rd,
+        fifo_empty => sig_dfifo_empty,
+        fifo_data => sig_dfifo_data_r,
+        axi_control_reg => sig_axi_control_reg,
+        axi_status_reg => sig_m_axis_status
+    );
 
 end Behavioural;

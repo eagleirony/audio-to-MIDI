@@ -12,7 +12,7 @@ package aud_param is
         );
         port (
             clk             : in  std_logic;
-            ctr_reg         : in  std_logic_vector(DATA_WIDTH-1 downto 0);
+            ctr_reg         : in  std_logic_vector(5 downto 0);
                 
             -- I2S interface to MEMs mic
             i2s_lrcl        : out std_logic;    -- left/riight clk (word sel): 0 = left, 1 = right
@@ -24,6 +24,27 @@ package aud_param is
             fifo_w_stb      : out std_logic;    -- Write strobe: 1 = ready to write, 0 = busy
             fifo_full       : in  std_logic     -- 1 = not full, 0 = full
         );
+    end component;
+    
+    component i2s_slave is
+    generic (
+        DATA_WIDTH : natural := 32;
+        PCM_PRECISION : natural := 18
+    );
+    port (
+        clk             : in  std_logic;
+        ctr_reg         : in  std_logic_vector(5 downto 0);
+
+        -- I2S interface
+        i2s_lrcl        : in std_logic;    -- left/right clk (word sel): 0 = left, 1 = right
+        i2s_dout        : out  std_logic;    -- serial data: payload, msb first
+        i2s_bclk        : in std_logic;    -- Bit clock: freq = sample rate * bits per channel * number of channels
+                                            -- (should run at 2-4MHz). Changes when the next bit is ready.
+        -- FIFO interface to MEMs mic
+        fifo_dout       : in std_logic_vector(DATA_WIDTH - 1 downto 0);
+        fifo_r_stb      : out std_logic;    -- Write strobe: 1 = ready to write, 0 = busy
+        fifo_empty      : in  std_logic     -- 1 = not full, 0 = full
+    );
     end component;
 
     component fifo is
@@ -93,7 +114,9 @@ package aud_param is
             -- Control bus signals (PUT YOUR REGISTERS HERE)
             ------------------------------------------------
             cb_i2s_control_reg  : out std_logic_vector(C_S_AXI_DATA_WIDTH-1 downto 0);
-            cb_status_reg       : in  std_logic_vector(C_S_AXI_DATA_WIDTH-1 downto 0);
+            cb_status_1_reg       : in  std_logic_vector(C_S_AXI_DATA_WIDTH-1 downto 0);
+            cb_status_2_reg       : in  std_logic_vector(C_S_AXI_DATA_WIDTH-1 downto 0);
+            cb_status_3_reg       : in  std_logic_vector(C_S_AXI_DATA_WIDTH-1 downto 0);
             cb_axi_control_reg  : out std_logic_vector(C_S_AXI_DATA_WIDTH-1 downto 0);
             cb_version_reg      : in  std_logic_vector(C_S_AXI_DATA_WIDTH-1 downto 0);
 
@@ -161,6 +184,43 @@ package aud_param is
                 -- accept the read data and response information.
             S_AXI_RREADY	: in std_logic
         );
+    end component;
+
+    component axis_slave is
+    generic(
+        DATA_WIDTH : integer := 32
+    );
+    port(
+        clk             : in std_logic; 
+        rst             : in std_logic;
+        axis_tdata      : in std_logic_vector(DATA_WIDTH-1 downto 0);
+        axis_tvalid     : in std_logic;
+        axis_tready     : out  std_logic;
+        axis_tlast      : in std_logic;
+        fifo_wr           : out std_logic;
+        fifo_full         : in std_logic;
+        fifo_data         : out std_logic_vector(DATA_WIDTH-1 downto 0);
+        axi_control_reg   : in std_logic_vector(DATA_WIDTH-1 downto 0)
+    );
+    end component;
+
+    component axis_master is
+    generic(
+        DATA_WIDTH : integer := 32
+    );
+    port(
+        clk             : in std_logic; 
+        rst             : in std_logic;
+        axis_tdata      : out std_logic_vector(DATA_WIDTH-1 downto 0);
+        axis_tvalid     : out std_logic;
+        axis_tready     : in  std_logic;
+        axis_tlast      : out std_logic;
+        fifo_rd           : out std_logic;
+        fifo_empty        : in std_logic;
+        fifo_data         : in std_logic_vector(DATA_WIDTH-1 downto 0);
+        axi_control_reg   : in std_logic_vector(DATA_WIDTH-1 downto 0);
+        axi_status_reg    : out std_logic_vector(DATA_WIDTH-1 downto 0)
+    );
     end component;
 
 
