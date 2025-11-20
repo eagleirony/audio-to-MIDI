@@ -18,7 +18,8 @@ entity fifo is
         empty   : out std_logic;
         full    : out std_logic;
         dout    : out std_logic_vector(DATA_WIDTH-1 downto 0);
-        status  : out std_logic_vector(DATA_WIDTH-1 downto 0)
+        status  : out std_logic_vector(DATA_WIDTH-1 downto 0);
+        fft_event : in std_logic_vector(5 downto 0)
     );
 end fifo;
 
@@ -58,11 +59,15 @@ begin
     int_rdp <= rdp(FIFO_DEPTH-1 downto 0);
     int_wrp <= wrp(FIFO_DEPTH-1 downto 0);
     sig_used <= wrp - rdp;
+    
     sig_status(31) <= sig_full;
     sig_status(30) <= sig_empty;
-    sig_status(FIFO_DEPTH downto 0) <= std_logic_vector(sig_used);
-    sig_status(29 downto FIFO_DEPTH+2) <= (others => '0');
+    sig_status(29 downto 28) <= (others => '0');
+    sig_status(27 downto 22) <= fft_event;
+    sig_status(21 downto FIFO_DEPTH+2) <= (others => '0');
     sig_status(FIFO_DEPTH+1) <= '1';
+    sig_status(FIFO_DEPTH downto 0) <= std_logic_vector(sig_used);
+    
     process (rdp, wrp, int_rdp, int_wrp)
     begin
         if (rdp = wrp) then

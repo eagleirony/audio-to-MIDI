@@ -67,7 +67,17 @@ entity audio_pipeline is
 		s00_axi_rdata	: out std_logic_vector(C_S00_AXI_DATA_WIDTH-1 downto 0);
 		s00_axi_rresp	: out std_logic_vector(1 downto 0);
 		s00_axi_rvalid	: out std_logic;
-		s00_axi_rready	: in  std_logic
+		s00_axi_rready	: in  std_logic;
+		
+		--------------------------------------------------
+        -- FFT status signals
+        --------------------------------------------------
+        xfft_event      : in std_logic_vector(5 downto 0);
+        
+        --------------------------------------------------
+        -- BTN input
+        --------------------------------------------------
+        btn_in          : in std_logic
     );
 end audio_pipeline;
 
@@ -118,7 +128,7 @@ architecture Behavioural of audio_pipeline is
     signal transfer_cnt : integer;
     
 begin
-    sig_version_reg <= x"00000015";
+    sig_version_reg <= btn_in & "000" & x"0000016";
     
     i2s2_dout <= sig_i2s_d_mux;
     pmod_led_d1 <= sig_i2s_control_reg(6);
@@ -208,7 +218,9 @@ begin
         rd              => sig_dfifo_rd,
         dout            => sig_dfifo_data_r,
         empty           => sig_dfifo_empty,
-        status          => sig_status_1_reg
+        status          => sig_status_1_reg,
+        
+        fft_event       => xfft_event
     );
     
     
@@ -245,7 +257,9 @@ begin
         rd              => sig_fbfifo_rd,
         dout            => sig_fbfifo_data_r,
         empty           => sig_fbfifo_empty,
-        status          => sig_status_2_reg
+        status          => sig_status_2_reg,
+        
+        fft_event       => xfft_event
     );
 
     --------------------------------------------------

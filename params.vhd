@@ -62,7 +62,8 @@ package aud_param is
             empty   : out std_logic;
             full    : out std_logic;
             dout    : out std_logic_vector(DATA_WIDTH-1 downto 0);
-            status  : out std_logic_vector(DATA_WIDTH-1 downto 0)
+            status  : out std_logic_vector(DATA_WIDTH-1 downto 0);
+            fft_event : in std_logic_vector(5 downto 0)
         );
     end component;
    
@@ -91,7 +92,17 @@ package aud_param is
             axis_tdata      : out std_logic_vector(DATA_WIDTH-1 downto 0);
             axis_tvalid     : out std_logic;
             axis_tready     : in  std_logic;
-            axis_tlast      : out std_logic
+            axis_tlast      : out std_logic;
+            
+            --------------------------------------------------
+            -- FFT status signals
+            --------------------------------------------------
+            xfft_event      : in std_logic_vector(5 downto 0);
+            
+            --------------------------------------------------
+            -- BTN input
+            --------------------------------------------------
+            btn_in          : in std_logic
         );
     end component;
     

@@ -18,15 +18,17 @@
  */
 
 #include <stdio.h>
+#include <math.h>
+#include <stdlib.h>
 #include "platform.h"
-#include "xaxidma.h"
 #include "xil_printf.h"
 #include "xparameters.h"
-#include "xsdps.h"
 #include "xil_io.h"
 #include "sleep.h"
-#include "ff.h"
+#include "xaxidma.h"
+#include "xuartps.h"
 
+// defines
 #define AXI_FIFO_BASE 				0xA0000000
 #define AXI_I2S_CTR_OFFSET 			0
 #define AXI_DATA_FIFO_STATUS_OFFSET 4
@@ -40,17 +42,131 @@
 #define I2S_ENABLE_RIGHT 	0x0004
 #define I2S_ENABLE_FEEDBACK 0x0040
 
-#define BUF_SIZE 1024
-#define SAMPLES 500
+#define UART0_DEVICE_ID		XPAR_XUARTPS_0_DEVICE_ID
+#define UART1_DEVICE_ID		XPAR_XUARTPS_1_DEVICE_ID
 
-volatile char rx_buf[BUF_SIZE*SAMPLES] = {0};
-volatile char tx_buf[BUF_SIZE] = {0};
+#define BUF_SIZE 8192
+#define FFT_SIZE 2048
+#define SAMPLING_FREQ 25201
+#define MIN_THRESHOLD 5000
+#define MIN_NOTE 48
 
-FATFS FatFs;
-FIL fil;
+// global variables
+volatile char rx_buf[BUF_SIZE] = {0};
+uint32_t fft_bins[FFT_SIZE] = {0};
+int curr_notes[6] = {0};
+int prev_notes[6] = {0};
+int frequency_bins[36] = {10, 11, 12, 13, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 24, 25, 27, 28, 30, 32, 34, 36, 38, 40, 42, 45, 47, 50, 53, 56, 60, 63, 67, 71, 75, 80};
 
 XAxiDma_Config *CfgPtr;
 XAxiDma AxiDma;
+
+XUartPs Uart0_Ps;		/* The instance of the UART Driver */
+XUartPs Uart1_Ps;		/* The instance of the UART Driver */
+
+// state machine
+#define FREQS_1 0
+#define FREQS_3 1
+#define FREQS_6 2
+
+#define NUM_STATES 3
+
+uint32_t prev_btn = 0;
+uint32_t curr_state = FREQS_1;
+
+// function declarations
+void init_axi_dma();
+void print_regs();
+
+void fetch_fft_data();
+void process_fft_data();
+void print_fft_data();
+void get_top_freqs();
+void print_waterfall();
+
+void check_btn();
+void check_freqs();
+
+void transmit_midi();
+void print_midi_master_input();
+
+int initialise_uart(XUartPs* Uart_Ps, u16 DeviceId, int baud_rate);
+int send_note(XUartPs* Uart_Ps, int note, int velocity);
+
+
+int main()
+{
+    init_platform();
+
+    print("Hello World\n\r");
+    print("Successfully ran Hello World application");
+
+    // initialise the axi dma
+    init_axi_dma();
+	initialise_uart(&Uart0_Ps, UART0_DEVICE_ID, 31250);
+
+    // continually read data from the fft and (TODO) handle MIDI transaction
+    while (1) {
+    	check_btn();
+    	fetch_fft_data();
+    	process_fft_data();
+    	check_freqs();
+    	transmit_midi();
+
+    	if (curr_state % 3 == 0) {
+//    		print_fft_data();
+    		print_waterfall();
+
+    	} else if (curr_state % 3 == 1) {
+    		print_midi_master_input();
+    	} else {
+    		get_top_freqs();
+    	}
+    }
+
+    cleanup_platform();
+    return 0;
+}
+
+void init_axi_dma() {
+	printf("Enabling I2S Left channel\n");
+	Xil_Out32(AXI_FIFO_BASE + AXI_I2S_CTR_OFFSET, I2S_ENABLE_CAPTURE | I2S_ENABLE_LEFT);
+	printf("Setting AXI transfer length to %d\n", BUF_SIZE/4);
+	Xil_Out32(AXI_FIFO_BASE + AXI_AXI_CTR_OFFSET, BUF_SIZE/4);
+	print_regs();
+
+	int Status = XST_SUCCESS;
+
+	CfgPtr = XAxiDma_LookupConfig(XPAR_AXI_DMA_0_DEVICE_ID);
+	if (!CfgPtr) {
+		print("No CfgPtr");
+		return;
+	}
+
+	Status = XAxiDma_CfgInitialize(&AxiDma, CfgPtr);
+	if (Status != XST_SUCCESS) {
+		print("DMA cfg init failure");
+		return;
+	}
+
+	if (XAxiDma_HasSg(&AxiDma)) {
+		print("Device configured as SG mode \r\n");
+		return;
+	}
+
+	print("DMA initialised\r\n");
+
+	Status = XAxiDma_Selftest(&AxiDma);
+	if (Status != XST_SUCCESS) {
+		print("DMA failed selftest\r\n");
+		return ;
+	}
+	print("DMA passed self test\r\n");
+
+	/* Disable interrupts, we use polling mode */
+	XAxiDma_IntrDisable(&AxiDma, XAXIDMA_IRQ_ALL_MASK, XAXIDMA_DEVICE_TO_DMA);
+	XAxiDma_IntrDisable(&AxiDma, XAXIDMA_IRQ_ALL_MASK, XAXIDMA_DMA_TO_DEVICE);
+}
 
 void print_regs() {
 	printf("   Bitfile Version: 0x%08x\n", Xil_In32(AXI_FIFO_BASE + AXI_VERSION_OFFSET));
@@ -59,235 +175,271 @@ void print_regs() {
 	printf("  Data FIFO Status: 0x%08x\n", Xil_In32(AXI_FIFO_BASE + AXI_DATA_FIFO_STATUS_OFFSET));
 	printf("    FB FIFO Status: 0x%08x\n", Xil_In32(AXI_FIFO_BASE + AXI_FB_FIFO_STATUS_OFFSET));
 	printf("AXIS master Status: 0x%08x\n", Xil_In32(AXI_FIFO_BASE + AXI_AXIS_MASTER_OFFSET));
-
 }
 
-void wav_write_header() {
-    FRESULT fr;
-    int wcount;
-    char wav_buf[256] = {0};
-
-    /* Give a work area to the default drive */
-    fr = f_mount(&FatFs, "1:/", 0);
-    if (fr) {
-		printf("SD WAV: Mount failed %d\n", fr);
-		return;
-	}
-
-    fr = f_open(&fil, "1:/mic.wav", FA_WRITE | FA_CREATE_ALWAYS);
-    if (fr) {
-    	printf("SD WAV: Open failed %d\n", fr);
-    	return;
-    }
-
-    wav_buf[0] = 'R';
-    wav_buf[1] = 'I';
-    wav_buf[2] = 'F';
-    wav_buf[3] = 'F';
-
-    wav_buf[4] = ( (uint32_t)BUF_SIZE*SAMPLES + 44 - 8) & 0xFF;
-    wav_buf[5] = (((uint32_t)BUF_SIZE*SAMPLES + 44 - 8) >> 8) & 0xFF;
-    wav_buf[6] = (((uint32_t)BUF_SIZE*SAMPLES + 44 - 8) >> 16) & 0xFF;
-    wav_buf[7] = (((uint32_t)BUF_SIZE*SAMPLES + 44 - 8) >> 24) & 0xFF;
-
-    wav_buf[8] = 'W';
-    wav_buf[9] = 'A';
-    wav_buf[10] = 'V';
-    wav_buf[11] = 'E';
-
-    wav_buf[12] = 'f';
-    wav_buf[13] = 'm';
-    wav_buf[14] = 't';
-    wav_buf[15] = 0x20;
-
-    wav_buf[16] = 0x10;
-
-    wav_buf[20] = 0x01;
-
-    wav_buf[22] = 0x01;
-
-    wav_buf[24] = ( (uint32_t)25201) & 0xFF;
-    wav_buf[25] = (((uint32_t)25201) >> 8) & 0xFF;
-    wav_buf[26] = (((uint32_t)25201) >> 16) & 0xFF;
-    wav_buf[27] = (((uint32_t)25201) >> 24) & 0xFF;
-
-    wav_buf[28] = ( (uint32_t)25201 * 4) & 0xFF;
-    wav_buf[29] = (((uint32_t)25201 * 4) >> 8) & 0xFF;
-    wav_buf[30] = (((uint32_t)25201 * 4) >> 16) & 0xFF;
-    wav_buf[31] = (((uint32_t)25201 * 4) >> 24) & 0xFF;
-
-    wav_buf[32] = 0x4;
-
-    wav_buf[34] = 32;
-
-    wav_buf[36] = 'd';
-    wav_buf[37] = 'a';
-	wav_buf[38] = 't';
-	wav_buf[39] = 'a';
-
-	wav_buf[40] = ( (uint32_t)BUF_SIZE*SAMPLES) & 0xFF;
-    wav_buf[41] = (((uint32_t)BUF_SIZE*SAMPLES) >> 8) & 0xFF;
-    wav_buf[42] = (((uint32_t)BUF_SIZE*SAMPLES) >> 16) & 0xFF;
-    wav_buf[43] = (((uint32_t)BUF_SIZE*SAMPLES) >> 24) & 0xFF;
-
-    fr = f_write(&fil, wav_buf, 44, &wcount);
-    if (fr) {
-    	printf("SD WAV: Write failed %d: %d\n", fr, wcount);
-    	return;
-    }
-    printf("SD WAV: Wrote %d bytes\n", wcount);
-}
-
-void wav_write_data() {
-	FRESULT fr;
-    int wcount;
-    for (int i = 0; i < SAMPLES; ++i) {
-		fr = f_write(&fil, &rx_buf[BUF_SIZE * i], BUF_SIZE, &wcount);
-		if (fr) {
-			printf("SD WAV: Write failed %d: %d\n", fr, wcount);
-			return;
-		}
-    }
-}
-
-void wav_close() {
-	FRESULT fr;
-    fr = f_close(&fil);
-    if (fr) {
-		printf("SD WAV: Close failed %d\n", fr);
-		return;
-	}
-}
-
-void record_audio() {
-	printf("SD WAV: Record Started\n");
+void fetch_fft_data() {
 	int Status = XST_SUCCESS;
-	for (int i = 0; i < SAMPLES; ++i) {
-		Xil_DCacheFlushRange((UINTPTR)rx_buf, BUF_SIZE);
-		Status = XAxiDma_SimpleTransfer(&AxiDma, (UINTPTR) (&rx_buf[BUF_SIZE * i]),
-				BUF_SIZE, XAXIDMA_DEVICE_TO_DMA);
-		if (Status != XST_SUCCESS) {
-			print("SD WAV: failed rx transfer call\r\n");
-			return 1;
-		}
 
-		while (1) {
-			if (!(XAxiDma_Busy(&AxiDma, XAXIDMA_DEVICE_TO_DMA))) {
-				break;
-			}
-		}
-	}
-	printf("SD WAV: Record finished\nSD WAV: Write Start\n");
-	wav_write_data();
-	wav_close();
-	printf("SD WAV: Write end\n");
-}
-
-void send_data() {
-
-	for (int i = 0; i < BUF_SIZE; ++i) {
-		tx_buf[i] = i & 0xff;
-	}
-
-	Xil_DCacheFlushRange((UINTPTR)tx_buf, BUF_SIZE);
-	int Status = XST_SUCCESS;
-	Status = XAxiDma_SimpleTransfer(&AxiDma, (UINTPTR) tx_buf,
-		BUF_SIZE, XAXIDMA_DMA_TO_DEVICE);
-	if (Status != XST_SUCCESS) {
-		print("failed tx transfer call\r\n");
-		return;
-	}
-
-}
-
-void print_data() {
-	for (int i = 0; i < BUF_SIZE; ++i) {
-		rx_buf[i] = 0;
-	}
-	int Status = XST_SUCCESS;
 	Xil_DCacheFlushRange((UINTPTR)rx_buf, BUF_SIZE);
 
-	Status = XAxiDma_SimpleTransfer(&AxiDma, (UINTPTR) (rx_buf),
-			BUF_SIZE, XAXIDMA_DEVICE_TO_DMA);
-
+	Status = XAxiDma_SimpleTransfer(&AxiDma, (UINTPTR)rx_buf, BUF_SIZE, XAXIDMA_DEVICE_TO_DMA);
 	if (Status != XST_SUCCESS) {
 		print("failed rx transfer call\r\n");
-		return 1;
+		return;
 	}
 
 	while (1) {
 		if (!(XAxiDma_Busy(&AxiDma, XAXIDMA_DEVICE_TO_DMA))) {
 			break;
 		}
+		//print_regs();
+		// printf("Waiting for XAxiDma_Busy, Status : 0x%08x\n", Xil_In32(AXI_FIFO_BASE + AXI_FIFO_STATUS_OFFSET));
+		//print("waiting");
+		usleep(1U);
 	}
 
-	for (int i = 0; i < BUF_SIZE; i = i + 4) {
-		printf("Sample %4d: 0x%02x%02x%02x%02x\n",
-				(i/4), rx_buf[i+3], rx_buf[i+2], rx_buf[i+1], rx_buf[i]);
+	Xil_DCacheFlushRange((UINTPTR)rx_buf, BUF_SIZE);
+	//print("DMA done\r\n");
+}
+
+void process_fft_data() {
+	for (int i = 0; i < FFT_SIZE; i++) {
+		fft_bins[i] = 0;
+		fft_bins[i] = (fft_bins[i] << 8) | rx_buf[4*i+3];
+		fft_bins[i] = (fft_bins[i] << 8) | rx_buf[4*i+2];
+		fft_bins[i] = (fft_bins[i] << 8) | rx_buf[4*i+1];
+		fft_bins[i] = (fft_bins[i] << 8) | rx_buf[4*i];
+		fft_bins[i] = sqrt(fft_bins[i]);
 	}
 }
 
-int main()
+void print_fft_data() {
+	// we only really care about samples in the range of 0-2kHz
+	for (int i = 0; i < 200; i = i + 4) {
+		int freq1 = i * (SAMPLING_FREQ / FFT_SIZE);
+		int freq2 = (i + 1) * (SAMPLING_FREQ / FFT_SIZE);
+		int freq3 = (i + 2) * (SAMPLING_FREQ / FFT_SIZE);
+		int freq4 = (i + 3) * (SAMPLING_FREQ / FFT_SIZE);
+		printf("% 5dHz: % 6d | % 5dHz: % 6d | % 5dHz: % 6d | % 5dHz: % 6d\n\r", freq1, fft_bins[i], freq2, fft_bins[i+1], freq3, fft_bins[i+2], freq4, fft_bins[i+3]);
+	}
+}
+
+void get_top_freqs() {
+	// only looking at range of 0-2kHz
+	int top_index = 6;
+	int top_val = fft_bins[6];
+	int second_index = 7;
+	int second_val = fft_bins[7];
+	int third_index = 8;
+	int third_val = fft_bins[8];
+
+	// find the top 3 values in the first 200 samples
+	for (int i = 9; i < 200; i++) {
+		if (fft_bins[i] > top_val) {
+			third_index = second_index;
+			third_val = second_val;
+			second_index = top_index;
+			second_val = top_val;
+			top_index = i;
+			top_val = fft_bins[i];
+		} else if (fft_bins[i] > second_val) {
+			third_index = second_index;
+			third_val = second_val;
+			second_index = i;
+			second_val = fft_bins[i];
+		} else if (fft_bins[i] > third_val) {
+			third_index = i;
+			third_val = fft_bins[i];
+		}
+	}
+
+	// print the top 3 frequencies for the cycle
+	printf("#1: % 4dHz Mag: % 5d\n\r", top_index * (SAMPLING_FREQ / FFT_SIZE), top_val);
+	printf("#2: % 4dHz\n\r", second_index * (SAMPLING_FREQ / FFT_SIZE));
+	printf("#3: % 4dHz\n\r", third_index * (SAMPLING_FREQ / FFT_SIZE));
+	print("\n\r");
+}
+
+void print_waterfall() {
+	uint32_t lowest = 0xFFFFFFFF;
+	uint32_t highest = 0;
+	for (int i = 1; i < 200; ++i) {
+		if (fft_bins[i] > highest) {
+			highest = fft_bins[i];
+		}
+		if (fft_bins[i] < lowest) {
+			lowest = fft_bins[i];
+		}
+	}    uint32_t quintile = (highest - lowest)/5;
+	uint32_t q2 = lowest + 1 * quintile;
+	uint32_t q3 = lowest + 2 * quintile;
+	uint32_t q4 = lowest + 3 * quintile;
+	uint32_t q5 = lowest + 4 * quintile;
+	for (int i = 1; i < 180; ++i) {
+		char out = '.';
+		if (fft_bins[i] > q2 && fft_bins[i] <= q3) {
+			out = 'o';
+		}
+		if (fft_bins[i] > q3 && fft_bins[i] <= q4) {
+			out = 'O';
+		}
+		if (fft_bins[i] > q4 && fft_bins[i] <= q5) {
+			out = '0';
+		}
+		if (fft_bins[i] > q5) {
+			out = 'X';
+		}
+		printf("%c", out);
+	}
+	printf("\n");
+}
+
+void check_btn() {
+	uint32_t curr_btn = Xil_In32(AXI_FIFO_BASE + AXI_VERSION_OFFSET);
+	curr_btn = curr_btn >> 31;
+
+	if (curr_btn != prev_btn) {
+		prev_btn = curr_btn;
+		if (curr_btn == 1) {
+			curr_state = (curr_state + 1) % NUM_STATES;
+		}
+	}
+}
+
+void check_freqs() {
+	int top_freqs[6] = {0};
+	int top_freqs_mags[6] = {0};
+
+	for (int i = 0; i < 6; i++) {
+		top_freqs[i] = -1;
+		top_freqs_mags[i] = 0;
+	}
+
+	for (int i = 0; i < 36; i++) {
+		int curr_mag = fft_bins[frequency_bins[i]];
+		// if the frequency is over the threshold, sort it
+		if (curr_mag > MIN_THRESHOLD) {
+			// check top_freqs_mags array from highest [0] to lowest [5]
+			// if curr_mag is at the jth spot, move down the rest of the array from [5] downto [j], then replace the [j] spot and break
+			for (int j = 0; j < 6; j++) {
+				if (curr_mag > top_freqs_mags[j]) {
+					for (int k = 5; k > j; k--) {
+						top_freqs_mags[k] = top_freqs_mags[k-1];
+						top_freqs[k] = top_freqs[k-1];
+					}
+					top_freqs_mags[j] = curr_mag;
+					top_freqs[j] = i;
+					break;
+				}
+			}
+		}
+	}
+
+	// at this point, we have an array of up to 6 frequencies, turn them into curr_notes
+	for (int i = 0; i < 6; i++) {
+		if (top_freqs[i] != -1) {
+			curr_notes[i] = top_freqs[i] + MIN_NOTE;
+		} else {
+			curr_notes[i] = -1;
+		}
+	}
+
+}
+
+void transmit_midi() {
+	// todo: transmit midi based on the difference between curr_notes and prev_notes arrays, optional to use the 3 states to actually do something
+	// check the number of notes to transmit based on curr_state
+	int num_notes = 0;
+	if (curr_state == FREQS_1) {
+		num_notes = 1;
+	} else if (curr_state == FREQS_3) {
+		num_notes = 3;
+	} else if (curr_state == FREQS_6) {
+		num_notes = 6;
+	}
+
+	// for all the valid notes in the prev_notes array, check if we must turn them off
+	for (int i = 0; i < num_notes; i++) {
+		int remove_note_i = 1;
+		for (int j = 0; j < num_notes; j++) {
+			if (prev_notes[i] == curr_notes[j]) {
+				remove_note_i = 0;
+			}
+		}
+		if (remove_note_i == 1) {
+			// send a MIDI signal to turn off prev_notes[i]
+			send_note(&Uart0_Ps, prev_notes[i], 0);
+		}
+	}
+
+	// for all the valid notes in the curr_notes_array, check if we must turn them on
+	for (int i = 0; i < num_notes; i++) {
+		int add_note_i = 1;
+		for (int j = 0; j < num_notes; j++) {
+			if (curr_notes[i] == prev_notes[j]) {
+				add_note_i = 0;
+			}
+		}
+		if (add_note_i == 1) {
+			// send a MIDI signal to turn on curr_notes[i]
+			send_note(&Uart0_Ps, curr_notes[i], 80);
+		}
+	}
+
+	// after transmitting all the midi required, copy curr_notes into prev_notes
+	for (int i = 0; i < 6; i++) {
+		prev_notes[i] = curr_notes[i];
+	}
+}
+
+void print_midi_master_input() {
+	for (int i = 0; i < 6; i++) {
+		if (curr_notes[i] != -1) {
+			printf("Note %d: %d\n\r", i, curr_notes[i]);
+		}
+	}
+	print("\n\r");
+}
+
+int initialise_uart(XUartPs* Uart_Ps, u16 DeviceId, int baud_rate)
 {
-    init_platform();
+	int Status;
+	XUartPs_Config *Config;
 
-    print("Hello World\n\r");
+	/*
+	 * Initialize the UART driver so that it's ready to use
+	 * Look up the configuration in the config table and then initialize it.
+	 */
+	Config = XUartPs_LookupConfig(DeviceId);
 
-	print_regs();
-	printf("Setting AXI transfer length to %d\n", BUF_SIZE/4);
-	Xil_Out32(AXI_FIFO_BASE + AXI_AXI_CTR_OFFSET, BUF_SIZE/4);
-	Xil_Out32(AXI_FIFO_BASE + AXI_I2S_CTR_OFFSET, I2S_ENABLE_FEEDBACK);
-	print_regs();
-
-	wav_write_header();
-
-	int Status = XST_SUCCESS;
-
-	CfgPtr = XAxiDma_LookupConfig(XPAR_AXI_DMA_0_DEVICE_ID);
-	if (!CfgPtr) {
-		print("No CfgPtr");
-		return 1;
+	if (NULL == Config) {
+		return XST_FAILURE;
 	}
 
-	Status = XAxiDma_CfgInitialize(&AxiDma, CfgPtr);
+	Status = XUartPs_CfgInitialize(Uart_Ps, Config, Config->BaseAddress);
 	if (Status != XST_SUCCESS) {
-		print("DMA cfg init failure");
-		return 1;
+		return XST_FAILURE;
 	}
 
-	if (XAxiDma_HasSg(&AxiDma)) {
-		print("Device configured as SG mode \r\n");
-		return 1;
-	}
+	XUartPs_SetBaudRate(Uart_Ps, baud_rate);
 
-	Status = XAxiDma_Selftest(&AxiDma);
-	if (Status != XST_SUCCESS) {
-		print("DMA failed selftest\r\n");
-		return 1;
-	}
-	print("DMA passed self test\r\n");
-
-	/* Disable interrupts, we use polling mode */
-	XAxiDma_IntrDisable(&AxiDma, XAXIDMA_IRQ_ALL_MASK, XAXIDMA_DEVICE_TO_DMA);
-	XAxiDma_IntrDisable(&AxiDma, XAXIDMA_IRQ_ALL_MASK, XAXIDMA_DMA_TO_DEVICE);
-
-	print("DMA initialised\r\n");
-
-	printf("Writing %d values to feedback system\n", (BUF_SIZE/4) * 2);
-	send_data();
-	send_data();
-
-	printf("Enabling I2S Left channel and feedback\n");
-	Xil_Out32(AXI_FIFO_BASE + AXI_I2S_CTR_OFFSET,
-		I2S_ENABLE_CAPTURE | I2S_ENABLE_LEFT | I2S_ENABLE_FEEDBACK);
-	print_regs();
-
-	printf("Reading %d values\n", (BUF_SIZE/4) * 2);
-	print_data();
-	print_data();
-
-	print_regs();
-
-    cleanup_platform();
-    return 0;
+	return Status;
 }
+
+int send_note(XUartPs* Uart_Ps, int note, int velocity)
+{
+
+	u8 HelloWorld[] = {144, note, velocity}; //command, note, velocity
+	int SentCount = 0;
+
+
+//	while (SentCount < (sizeof(HelloWorld) - 1)) {
+//			/* Transmit the data */
+//			SentCount += XUartPs_Send(&Uart_Ps, &HelloWorld[SentCount], 1);
+//		}
+	SentCount += XUartPs_Send(Uart_Ps, &HelloWorld[0], 3);
+
+	return SentCount;
+}
+
+
