@@ -16,7 +16,7 @@ This project was created by Aaron Nyholm (z5316510), Daniel Craig (z5417681) and
 This repository contains the files for an audio to MIDI converter. This device takes in raw audio via I2S microphone (and even recorded audio data via AXI Stream into audio_pipeline), converts this into bins in the frequency domain using Xilinx's Fast Fourier Transform core, and outputs prominent notes within octaves 3-5 (130.81Hz - 987.77Hz) via the MIDI data standard.
 This project is ran on the Xilinx Kria KV260 Vision AI Starter Kit. Attached to this is a specially designed PMod Board alongside a SPH0645 I2S Mic, allowing for I2S audio input into the KV260's PL. An image of the project board can be seen below.
 
-![Project Board](./Images/kria-board)
+![Project Board](./Images/kria-board.jpg)
 
 ### 1.2 MIDI Overview
 MIDI is a data standard for electronic musical instruments and synthesizers to connect over a UART line of communication. A typical MIDI packet is 10 bits wide, with a start bit (low), 8 data bits and a stop bit (high), with MIDI transfers typically consisting of an instruction packet followed by an expected amount of data packets. Whilst there are many facets of the MIDI protocol, this project simply focuses on the transferral of data relating to turning on and off notes.
@@ -26,7 +26,15 @@ MIDI is a data standard for electronic musical instruments and synthesizers to c
 
 ### 1.4 How Does this Project Integrate into a Wider System?
 
--- TODO: mermaid diagram showing flow of data from raw audio  -> i2s microphone/AXI stream in -> audio_pipeline -> raw data over AXI STREAM -> FFT -> frequency data over AXI STREAM -> PS -> MIDI over UART -> Synthesizer -> Audio Amplifier -> Output Tones 
+```mermaid
+flowchart TD
+	A[Raw Audio] -- I2S Microphone --> B[Quantised Data in audio_pipeline];
+	B -- AXI Stream to FFT --> C[Frequency Bins from FFT IP];
+	C -- AXI Stream over AXI DMA --> D[PS];
+	D -- Conversion Algorithm to MIDI Signal --> E[UART0 Master];
+	E -- Send MIDI over UART --> F[MIDI Receiver, e.g. Synthesizer, Audio Amplifier];
+	F -- optional --> G[Output Notes closest to input audio];
+```
 
 # 2 File Organisation
 
