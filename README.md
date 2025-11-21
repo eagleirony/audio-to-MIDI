@@ -145,7 +145,7 @@ flowchart TD
 	A[Check Button and State Transition] --> B[Fetch FFT Data via AXI DMA];
 	B --> C[Process Raw Data into FFT Bins];
 	C --> D[Process FFT Bin Data into Selected MIDI Notes Data];
-	D --> E[Send MIDI for Current Notes over Uart (no. of notes based on curr_state)];
+	D --> E[Send MIDI for Current Notes over Uart, no. of notes based on curr_state];
 	E -- curr_state == FREQS_1 --> F[Print Waterfall];
 	E -- curr_state == FREQS_3 --> G[Print Detected Top MIDI Notes];
 	E -- curr_state == FREQS_6 --> H[Print Top 3 Frequencies];
