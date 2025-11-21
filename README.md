@@ -223,10 +223,10 @@ Next, press the `Run` command in the Vitis command bar. Then observe the serial 
 
 ### 5.4 Integrating this project into a larger system
 
-To integrate this project into a larger audio system, we need to create an adapter for the MIDI output. The form of such adapter depends on the device which we desire to connect our project to. When we demo-ed our project, the device we connected the our project to ____ accepted MIDI input via a DIN connector. Below, we can observe our modified DIN connector which we used to connect to this device.
+To integrate this project into a larger audio system, we need to create an adapter for the MIDI output. The form of such adapter depends on the device which we desire to connect our project to. When we demo-ed our project, the device we connected the our project to an Ableton live coming out of a guitar speaker. To do this, we created a modified DIN midi port (seen below) which connected to our design and adapted to a rubix44 interface for the Ableton.
 
-![Modified DIN connector](./Images/din-connector.jpg)
+![Modified DIN connector](./Images/modified-din.jpg)
 
-As an example of how one could integrate our project into a system, our demo involved playing guitar into the microphone and playing back the MIDI output using an amplifier. Below is an image of this demonstration, contact us if you desire a video.
+As an example of how one could integrate our project into a system, our demo involved playing guitar into the microphone and playing back the MIDI notes using an Ableton and amplifier. Below is an image of this demonstration, contact us if you desire a video.
 
-![Our Integration](./Images/demo-image.png)
+![Our Integration](./Images/project-demo.JPG)
