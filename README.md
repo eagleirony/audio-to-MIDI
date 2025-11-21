@@ -37,8 +37,10 @@ flowchart TD
 ```
 
 # 2 File Organisation
-
+There are several VHDL source files which constitute the Vivado model of our hardware, these being `audio_pipeline.vhd`, `axis_master.vhd`, `axis_slave.vhd`, `ctrl_bus.vhd`, `fifo.vhd`, `i2s_master.vhd`, `i2s_slave.vhd` and `params.vhd`. All of these files should be included when constructing the project.
 There are four testbenches included in the project. `fifo_TB.vhd` tests the fifo. `axis_TB.vhd` tests the AXI stream implementation. `i2s_slave_TB` and `i2s_master_TB` test the respective i2s controllers.
+
+There is one C file, `freq_to_midi.c`, which holds our source code for the PS used in the Vitis project.
 
 `xsas` holds prebuilt XSAs to allow for quick usage of the design. `audio_to_midi_24.xsa` is the latest build. You can confirm which version you are using by checking the version register.
 
