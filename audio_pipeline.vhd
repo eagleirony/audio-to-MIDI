@@ -35,6 +35,7 @@ entity audio_pipeline is
         axis_o_tvalid     : out std_logic;
         axis_o_tready     : in  std_logic;
         axis_o_tlast      : out std_logic;
+        axis_o_tdest      : out std_logic;
         
         --------------------------------------------------
         -- AXI4-Stream In
@@ -112,13 +113,12 @@ architecture Behavioural of audio_pipeline is
     signal sig_status_2_reg           : std_logic_vector(DATA_WIDTH-1 downto 0);
     signal sig_axi_control_reg             : std_logic_vector(DATA_WIDTH-1 downto 0);
     signal sig_version_reg             : std_logic_vector(DATA_WIDTH-1 downto 0);
+    signal sig_m_axis_status_reg       : std_logic_vector(DATA_WIDTH-1 downto 0);
 
     signal sig_i2s_mic_d : std_logic;
     signal sig_i2s_slv_d : std_logic;
     signal sig_i2s_d_mux : std_logic;
     
-    signal sig_m_axis_status       : std_logic_vector(DATA_WIDTH-1 downto 0);
-
     signal sig_i2s_lrclk : std_logic;
     signal sig_i2s_bclk : std_logic;
     
@@ -128,7 +128,11 @@ architecture Behavioural of audio_pipeline is
     signal transfer_cnt : integer;
     
 begin
-    sig_version_reg <= btn_in & "000" & x"0000016";
+    sig_version_reg <= x"00000018";
+    
+    sig_status_2_reg(31) <= btn_in;
+    sig_status_2_reg(5 downto 0) <= xfft_event;
+    sig_status_2_reg(30 downto 6) <= (others => '0');
     
     i2s2_dout <= sig_i2s_d_mux;
     pmod_led_d1 <= sig_i2s_control_reg(6);
@@ -149,7 +153,7 @@ begin
         cb_i2s_control_reg  => sig_i2s_control_reg,
         cb_status_1_reg   => sig_status_1_reg,
         cb_status_2_reg   => sig_status_2_reg,
-        cb_status_3_reg    => sig_m_axis_status,
+        cb_status_3_reg    => sig_m_axis_status_reg,
         cb_axi_control_reg     => sig_axi_control_reg,
         cb_version_reg => sig_version_reg,
 
@@ -218,9 +222,7 @@ begin
         rd              => sig_dfifo_rd,
         dout            => sig_dfifo_data_r,
         empty           => sig_dfifo_empty,
-        status          => sig_status_1_reg,
-        
-        fft_event       => xfft_event
+        status          => sig_status_1_reg(15 downto 0)
     );
     
     
@@ -257,9 +259,7 @@ begin
         rd              => sig_fbfifo_rd,
         dout            => sig_fbfifo_data_r,
         empty           => sig_fbfifo_empty,
-        status          => sig_status_2_reg,
-        
-        fft_event       => xfft_event
+        status          => sig_status_1_reg(31 downto 16)
     );
 
     --------------------------------------------------
@@ -290,11 +290,12 @@ begin
         axis_tvalid => axis_o_tvalid,
         axis_tready => axis_o_tready,
         axis_tlast => axis_o_tlast,
+        axis_tdest => axis_o_tdest,
         fifo_rd => sig_dfifo_rd,
         fifo_empty => sig_dfifo_empty,
         fifo_data => sig_dfifo_data_r,
         axi_control_reg => sig_axi_control_reg,
-        axi_status_reg => sig_m_axis_status
+        axi_status_reg => sig_m_axis_status_reg
     );
 
 end Behavioural;

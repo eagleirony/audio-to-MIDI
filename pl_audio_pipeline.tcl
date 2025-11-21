@@ -142,11 +142,12 @@ xilinx.com:ip:axi_dma:7.1\
 xilinx.com:ip:proc_sys_reset:5.0\
 xilinx.com:ip:smartconnect:1.0\
 xilinx.com:ip:xfft:9.1\
-xilinx.com:ip:xlslice:1.0\
 xilinx.com:ip:xlconstant:1.1\
 xilinx.com:ip:xlconcat:2.1\
+xilinx.com:ip:xlslice:1.0\
 xilinx.com:ip:mult_gen:12.0\
 xilinx.com:ip:c_addsub:12.0\
+xilinx.com:ip:axis_data_fifo:2.0\
 "
 
    set list_ips_missing ""
@@ -700,6 +701,7 @@ Port;FD4A0000;FD4AFFFF;0|FPD;DPDMA;FD4C0000;FD4CFFFF;0|FPD;DDR_XMPU5_CFG;FD05000
   # Create instance: xfft_0, and set properties
   set xfft_0 [ create_bd_cell -type ip -vlnv xilinx.com:ip:xfft:9.1 xfft_0 ]
   set_property -dict [list \
+    CONFIG.aresetn {true} \
     CONFIG.implementation_options {pipelined_streaming_io} \
     CONFIG.number_of_stages_using_block_ram_for_data_and_phase_factors {4} \
     CONFIG.output_ordering {natural_order} \
@@ -707,31 +709,6 @@ Port;FD4A0000;FD4AFFFF;0|FPD;DPDMA;FD4C0000;FD4CFFFF;0|FPD;DDR_XMPU5_CFG;FD05000
     CONFIG.target_data_throughput {50} \
     CONFIG.transform_length {2048} \
   ] $xfft_0
-
-
-  # Create instance: xlslice_0, and set properties
-  set xlslice_0 [ create_bd_cell -type ip -vlnv xilinx.com:ip:xlslice:1.0 xlslice_0 ]
-  set_property -dict [list \
-    CONFIG.DIN_FROM {28} \
-    CONFIG.DIN_TO {14} \
-    CONFIG.DOUT_WIDTH {15} \
-  ] $xlslice_0
-
-
-  # Create instance: xlconstant_0, and set properties
-  set xlconstant_0 [ create_bd_cell -type ip -vlnv xilinx.com:ip:xlconstant:1.1 xlconstant_0 ]
-  set_property -dict [list \
-    CONFIG.CONST_VAL {0} \
-    CONFIG.CONST_WIDTH {17} \
-  ] $xlconstant_0
-
-
-  # Create instance: xlconcat_0, and set properties
-  set xlconcat_0 [ create_bd_cell -type ip -vlnv xilinx.com:ip:xlconcat:2.1 xlconcat_0 ]
-  set_property -dict [list \
-    CONFIG.IN0_WIDTH {17} \
-    CONFIG.IN1_WIDTH {15} \
-  ] $xlconcat_0
 
 
   # Create instance: xlconstant_1, and set properties
@@ -838,31 +815,73 @@ Port;FD4A0000;FD4AFFFF;0|FPD;DPDMA;FD4C0000;FD4CFFFF;0|FPD;DDR_XMPU5_CFG;FD05000
   set_property CONFIG.NUM_PORTS {6} $xlconcat_3
 
 
+  # Create instance: axis_interconnect_0, and set properties
+  set axis_interconnect_0 [ create_bd_cell -type ip -vlnv xilinx.com:ip:axis_interconnect:2.1 axis_interconnect_0 ]
+  set_property -dict [list \
+    CONFIG.ARB_ON_TLAST {0} \
+    CONFIG.ENABLE_ADVANCED_OPTIONS {0} \
+    CONFIG.M00_FIFO_DEPTH {2048} \
+    CONFIG.M00_FIFO_MODE {1} \
+    CONFIG.M01_FIFO_DEPTH {2048} \
+    CONFIG.M01_FIFO_MODE {1} \
+    CONFIG.ROUTING_MODE {0} \
+    CONFIG.S00_FIFO_MODE {1} \
+  ] $axis_interconnect_0
+
+
+  # Create instance: axis_interconnect_1, and set properties
+  set axis_interconnect_1 [ create_bd_cell -type ip -vlnv xilinx.com:ip:axis_interconnect:2.1 axis_interconnect_1 ]
+  set_property -dict [list \
+    CONFIG.ARB_ON_TLAST {0} \
+    CONFIG.M00_AXIS_HIGHTDEST {0x00000001} \
+    CONFIG.M00_FIFO_DEPTH {2048} \
+    CONFIG.M00_FIFO_MODE {1} \
+    CONFIG.NUM_MI {1} \
+    CONFIG.NUM_SI {2} \
+    CONFIG.S00_FIFO_DEPTH {2048} \
+    CONFIG.S00_FIFO_MODE {1} \
+    CONFIG.S01_FIFO_DEPTH {2048} \
+    CONFIG.S01_FIFO_MODE {1} \
+  ] $axis_interconnect_1
+
+
+  # Create instance: axis_data_fifo_0, and set properties
+  set axis_data_fifo_0 [ create_bd_cell -type ip -vlnv xilinx.com:ip:axis_data_fifo:2.0 axis_data_fifo_0 ]
+  set_property -dict [list \
+    CONFIG.FIFO_DEPTH {64} \
+    CONFIG.FIFO_MODE {1} \
+    CONFIG.HAS_TLAST {1} \
+    CONFIG.TDATA_NUM_BYTES {4} \
+  ] $axis_data_fifo_0
+
+
   # Create interface connections
+  connect_bd_intf_net -intf_net S01_AXIS_1 [get_bd_intf_pins axis_interconnect_1/S01_AXIS] [get_bd_intf_pins axis_interconnect_0/M01_AXIS]
+  connect_bd_intf_net -intf_net audio_pipeline_0_axis_o [get_bd_intf_pins audio_pipeline_0/axis_o] [get_bd_intf_pins axis_interconnect_0/S00_AXIS]
   connect_bd_intf_net -intf_net axi_dma_0_M_AXIS_MM2S [get_bd_intf_pins axi_dma_0/M_AXIS_MM2S] [get_bd_intf_pins audio_pipeline_0/axis_i]
   connect_bd_intf_net -intf_net axi_dma_0_M_AXI_MM2S [get_bd_intf_pins axi_dma_0/M_AXI_MM2S] [get_bd_intf_pins axi_smc/S01_AXI]
   connect_bd_intf_net -intf_net axi_dma_0_M_AXI_S2MM [get_bd_intf_pins axi_dma_0/M_AXI_S2MM] [get_bd_intf_pins axi_smc/S00_AXI]
   connect_bd_intf_net -intf_net axi_smc_M00_AXI [get_bd_intf_pins axi_smc/M00_AXI] [get_bd_intf_pins zynq_ultra_ps_e_0/S_AXI_HPC0_FPD]
+  connect_bd_intf_net -intf_net axis_data_fifo_0_M_AXIS [get_bd_intf_pins axis_data_fifo_0/M_AXIS] [get_bd_intf_pins axis_interconnect_1/S00_AXIS]
+  connect_bd_intf_net -intf_net axis_interconnect_0_M00_AXIS [get_bd_intf_pins axis_interconnect_0/M00_AXIS] [get_bd_intf_pins xfft_0/S_AXIS_DATA]
+  connect_bd_intf_net -intf_net axis_interconnect_1_M00_AXIS [get_bd_intf_pins axis_interconnect_1/M00_AXIS] [get_bd_intf_pins axi_dma_0/S_AXIS_S2MM]
   connect_bd_intf_net -intf_net ps8_0_axi_periph_M00_AXI [get_bd_intf_pins ps8_0_axi_periph/M00_AXI] [get_bd_intf_pins audio_pipeline_0/s00_axi]
   connect_bd_intf_net -intf_net ps8_0_axi_periph_M01_AXI [get_bd_intf_pins ps8_0_axi_periph/M01_AXI] [get_bd_intf_pins axi_dma_0/S_AXI_LITE]
   connect_bd_intf_net -intf_net zynq_ultra_ps_e_0_M_AXI_HPM0_FPD [get_bd_intf_pins zynq_ultra_ps_e_0/M_AXI_HPM0_FPD] [get_bd_intf_pins ps8_0_axi_periph/S00_AXI]
 
   # Create port connections
-  connect_bd_net -net audio_pipeline_0_axis_o_tdata [get_bd_pins audio_pipeline_0/axis_o_tdata] [get_bd_pins xlslice_0/Din]
-  connect_bd_net -net audio_pipeline_0_axis_o_tlast [get_bd_pins audio_pipeline_0/axis_o_tlast] [get_bd_pins xfft_0/s_axis_data_tlast]
-  connect_bd_net -net audio_pipeline_0_axis_o_tvalid [get_bd_pins audio_pipeline_0/axis_o_tvalid] [get_bd_pins xfft_0/s_axis_data_tvalid]
   connect_bd_net -net audio_pipeline_0_i2s2_dout [get_bd_pins audio_pipeline_0/i2s2_dout] [get_bd_ports pmod_i2s2_dout]
   connect_bd_net -net audio_pipeline_0_i2s_bclk [get_bd_pins audio_pipeline_0/i2s_bclk] [get_bd_ports pmod_i2s_bclk]
   connect_bd_net -net audio_pipeline_0_i2s_lrcl [get_bd_pins audio_pipeline_0/i2s_lrcl] [get_bd_ports pmod_i2s_lrclk]
   connect_bd_net -net audio_pipeline_0_pmod_led_d1 [get_bd_pins audio_pipeline_0/pmod_led_d1] [get_bd_ports pmod_led_d1]
-  connect_bd_net -net axi_dma_0_s_axis_s2mm_tready [get_bd_pins axi_dma_0/s_axis_s2mm_tready] [get_bd_pins xfft_0/m_axis_data_tready]
-  connect_bd_net -net c_addsub_0_S [get_bd_pins c_addsub_0/S] [get_bd_pins axi_dma_0/s_axis_s2mm_tdata]
+  connect_bd_net -net axis_data_fifo_0_s_axis_tready [get_bd_pins axis_data_fifo_0/s_axis_tready] [get_bd_pins xfft_0/m_axis_data_tready]
+  connect_bd_net -net c_addsub_0_S [get_bd_pins c_addsub_0/S] [get_bd_pins axis_data_fifo_0/s_axis_tdata]
   connect_bd_net -net mult_gen_0_P [get_bd_pins mult_gen_0/P] [get_bd_pins c_addsub_0/A]
   connect_bd_net -net mult_gen_1_P [get_bd_pins mult_gen_1/P] [get_bd_pins c_addsub_0/B]
   connect_bd_net -net pmod_btn_sw1_1 [get_bd_ports pmod_btn_sw1] [get_bd_pins audio_pipeline_0/btn_in]
   connect_bd_net -net pmod_i2s2_bclk_1 [get_bd_ports pmod_i2s2_bclk] [get_bd_pins zynq_ultra_ps_e_0/emio_uart0_rxd]
   connect_bd_net -net pmod_i2s_dout_1 [get_bd_ports pmod_i2s_dout] [get_bd_pins audio_pipeline_0/i2s_dout]
-  connect_bd_net -net rst_ps8_0_99M_peripheral_aresetn [get_bd_pins rst_ps8_0_99M/peripheral_aresetn] [get_bd_pins ps8_0_axi_periph/S00_ARESETN] [get_bd_pins ps8_0_axi_periph/M00_ARESETN] [get_bd_pins ps8_0_axi_periph/ARESETN] [get_bd_pins axi_dma_0/axi_resetn] [get_bd_pins ps8_0_axi_periph/M01_ARESETN] [get_bd_pins axi_smc/aresetn] [get_bd_pins ps8_0_axi_periph/M02_ARESETN] [get_bd_pins audio_pipeline_0/rst] [get_bd_pins audio_pipeline_0/s00_axi_aresetn]
+  connect_bd_net -net rst_ps8_0_99M_peripheral_aresetn [get_bd_pins rst_ps8_0_99M/peripheral_aresetn] [get_bd_pins ps8_0_axi_periph/S00_ARESETN] [get_bd_pins ps8_0_axi_periph/M00_ARESETN] [get_bd_pins ps8_0_axi_periph/ARESETN] [get_bd_pins axi_dma_0/axi_resetn] [get_bd_pins ps8_0_axi_periph/M01_ARESETN] [get_bd_pins axi_smc/aresetn] [get_bd_pins ps8_0_axi_periph/M02_ARESETN] [get_bd_pins xfft_0/aresetn] [get_bd_pins axis_interconnect_0/ARESETN] [get_bd_pins axis_interconnect_0/S00_AXIS_ARESETN] [get_bd_pins axis_interconnect_0/M00_AXIS_ARESETN] [get_bd_pins axis_interconnect_0/M01_AXIS_ARESETN] [get_bd_pins axis_data_fifo_0/s_axis_aresetn] [get_bd_pins axis_interconnect_1/ARESETN] [get_bd_pins axis_interconnect_1/S00_AXIS_ARESETN] [get_bd_pins axis_interconnect_1/M00_AXIS_ARESETN] [get_bd_pins axis_interconnect_1/S01_AXIS_ARESETN] [get_bd_pins audio_pipeline_0/rst] [get_bd_pins audio_pipeline_0/s00_axi_aresetn]
   connect_bd_net -net xfft_0_event_data_in_channel_halt [get_bd_pins xfft_0/event_data_in_channel_halt] [get_bd_pins xlconcat_3/In4]
   connect_bd_net -net xfft_0_event_data_out_channel_halt [get_bd_pins xfft_0/event_data_out_channel_halt] [get_bd_pins xlconcat_3/In5]
   connect_bd_net -net xfft_0_event_frame_started [get_bd_pins xfft_0/event_frame_started] [get_bd_pins xlconcat_3/In0]
@@ -870,24 +889,20 @@ Port;FD4A0000;FD4AFFFF;0|FPD;DPDMA;FD4C0000;FD4CFFFF;0|FPD;DDR_XMPU5_CFG;FD05000
   connect_bd_net -net xfft_0_event_tlast_missing [get_bd_pins xfft_0/event_tlast_missing] [get_bd_pins xlconcat_3/In2]
   connect_bd_net -net xfft_0_event_tlast_unexpected [get_bd_pins xfft_0/event_tlast_unexpected] [get_bd_pins xlconcat_3/In1]
   connect_bd_net -net xfft_0_m_axis_data_tdata [get_bd_pins xfft_0/m_axis_data_tdata] [get_bd_pins xlslice_1/Din] [get_bd_pins xlslice_2/Din]
-  connect_bd_net -net xfft_0_m_axis_data_tlast [get_bd_pins xfft_0/m_axis_data_tlast] [get_bd_pins axi_dma_0/s_axis_s2mm_tlast]
-  connect_bd_net -net xfft_0_m_axis_data_tvalid [get_bd_pins xfft_0/m_axis_data_tvalid] [get_bd_pins axi_dma_0/s_axis_s2mm_tvalid]
-  connect_bd_net -net xfft_0_s_axis_data_tready [get_bd_pins xfft_0/s_axis_data_tready] [get_bd_pins audio_pipeline_0/axis_o_tready]
-  connect_bd_net -net xlconcat_0_dout [get_bd_pins xlconcat_0/dout] [get_bd_pins xfft_0/s_axis_data_tdata]
+  connect_bd_net -net xfft_0_m_axis_data_tlast [get_bd_pins xfft_0/m_axis_data_tlast] [get_bd_pins axis_data_fifo_0/s_axis_tlast]
+  connect_bd_net -net xfft_0_m_axis_data_tvalid [get_bd_pins xfft_0/m_axis_data_tvalid] [get_bd_pins axis_data_fifo_0/s_axis_tvalid]
   connect_bd_net -net xlconcat_1_dout [get_bd_pins xlconcat_1/dout] [get_bd_pins xlconcat_2/In1]
   connect_bd_net -net xlconcat_2_dout [get_bd_pins xlconcat_2/dout] [get_bd_pins xfft_0/s_axis_config_tdata]
   connect_bd_net -net xlconcat_3_dout [get_bd_pins xlconcat_3/dout] [get_bd_pins audio_pipeline_0/xfft_event]
-  connect_bd_net -net xlconstant_0_dout [get_bd_pins xlconstant_0/dout] [get_bd_pins xlconcat_0/In0]
   connect_bd_net -net xlconstant_1_dout [get_bd_pins xlconstant_1/dout] [get_bd_pins xfft_0/s_axis_config_tvalid] [get_bd_pins xlconcat_2/In2]
   connect_bd_net -net xlconstant_2_dout [get_bd_pins xlconstant_2/dout] [get_bd_pins xlconcat_1/In0]
   connect_bd_net -net xlconstant_3_dout [get_bd_pins xlconstant_3/dout] [get_bd_pins xlconcat_1/In1] [get_bd_pins xlconcat_1/In2] [get_bd_pins xlconcat_1/In3] [get_bd_pins xlconcat_1/In4]
   connect_bd_net -net xlconstant_4_dout [get_bd_pins xlconstant_4/dout] [get_bd_pins xlconcat_1/In5]
   connect_bd_net -net xlconstant_5_dout [get_bd_pins xlconstant_5/dout] [get_bd_pins xlconcat_2/In0]
-  connect_bd_net -net xlslice_0_Dout [get_bd_pins xlslice_0/Dout] [get_bd_pins xlconcat_0/In1]
   connect_bd_net -net xlslice_1_Dout [get_bd_pins xlslice_1/Dout] [get_bd_pins mult_gen_0/A] [get_bd_pins mult_gen_0/B]
   connect_bd_net -net xlslice_2_Dout [get_bd_pins xlslice_2/Dout] [get_bd_pins mult_gen_1/A] [get_bd_pins mult_gen_1/B]
   connect_bd_net -net zynq_ultra_ps_e_0_emio_uart0_txd [get_bd_pins zynq_ultra_ps_e_0/emio_uart0_txd] [get_bd_ports pmod_i2s2_lrclk]
-  connect_bd_net -net zynq_ultra_ps_e_0_pl_clk0 [get_bd_pins zynq_ultra_ps_e_0/pl_clk0] [get_bd_pins zynq_ultra_ps_e_0/maxihpm0_fpd_aclk] [get_bd_pins ps8_0_axi_periph/S00_ACLK] [get_bd_pins rst_ps8_0_99M/slowest_sync_clk] [get_bd_pins ps8_0_axi_periph/M00_ACLK] [get_bd_pins ps8_0_axi_periph/ACLK] [get_bd_pins axi_dma_0/s_axi_lite_aclk] [get_bd_pins ps8_0_axi_periph/M01_ACLK] [get_bd_pins axi_dma_0/m_axi_s2mm_aclk] [get_bd_pins axi_smc/aclk] [get_bd_pins zynq_ultra_ps_e_0/saxihpc0_fpd_aclk] [get_bd_pins ps8_0_axi_periph/M02_ACLK] [get_bd_pins axi_dma_0/m_axi_mm2s_aclk] [get_bd_pins xfft_0/aclk] [get_bd_pins audio_pipeline_0/clk] [get_bd_pins audio_pipeline_0/s00_axi_aclk]
+  connect_bd_net -net zynq_ultra_ps_e_0_pl_clk0 [get_bd_pins zynq_ultra_ps_e_0/pl_clk0] [get_bd_pins zynq_ultra_ps_e_0/maxihpm0_fpd_aclk] [get_bd_pins ps8_0_axi_periph/S00_ACLK] [get_bd_pins rst_ps8_0_99M/slowest_sync_clk] [get_bd_pins ps8_0_axi_periph/M00_ACLK] [get_bd_pins ps8_0_axi_periph/ACLK] [get_bd_pins axi_dma_0/s_axi_lite_aclk] [get_bd_pins ps8_0_axi_periph/M01_ACLK] [get_bd_pins axi_dma_0/m_axi_s2mm_aclk] [get_bd_pins axi_smc/aclk] [get_bd_pins zynq_ultra_ps_e_0/saxihpc0_fpd_aclk] [get_bd_pins ps8_0_axi_periph/M02_ACLK] [get_bd_pins axi_dma_0/m_axi_mm2s_aclk] [get_bd_pins xfft_0/aclk] [get_bd_pins axis_interconnect_0/S00_AXIS_ACLK] [get_bd_pins axis_interconnect_0/ACLK] [get_bd_pins axis_interconnect_0/M00_AXIS_ACLK] [get_bd_pins axis_interconnect_0/M01_AXIS_ACLK] [get_bd_pins axis_data_fifo_0/s_axis_aclk] [get_bd_pins axis_interconnect_1/S01_AXIS_ACLK] [get_bd_pins axis_interconnect_1/M00_AXIS_ACLK] [get_bd_pins axis_interconnect_1/S00_AXIS_ACLK] [get_bd_pins axis_interconnect_1/ACLK] [get_bd_pins audio_pipeline_0/clk] [get_bd_pins audio_pipeline_0/s00_axi_aclk]
   connect_bd_net -net zynq_ultra_ps_e_0_pl_resetn0 [get_bd_pins zynq_ultra_ps_e_0/pl_resetn0] [get_bd_pins rst_ps8_0_99M/ext_reset_in]
 
   # Create address segments
@@ -907,98 +922,108 @@ Port;FD4A0000;FD4AFFFF;0|FPD;DPDMA;FD4C0000;FD4CFFFF;0|FPD;DDR_XMPU5_CFG;FD05000
   # Perform GUI Layout
   regenerate_bd_layout -layout_string {
    "ActiveEmotionalView":"Default View",
-   "Default View_ScaleFactor":"0.757973",
-   "Default View_TopLeft":"2282,640",
+   "Default View_Layers":"/zynq_ultra_ps_e_0_pl_clk0:true|/c_addsub_0_S:true|/xfft_0_event_tlast_missing:true|/xfft_0_event_data_in_channel_halt:true|/zynq_ultra_ps_e_0_pl_resetn0:true|/xfft_0_event_frame_started:true|/xfft_0_event_tlast_unexpected:true|/rst_ps8_0_99M_peripheral_aresetn:true|/xfft_0_event_status_channel_halt:true|/xfft_0_event_data_out_channel_halt:true|/mult_gen_0_P:true|/mult_gen_1_P:true|",
+   "Default View_ScaleFactor":"0.709924",
+   "Default View_TopLeft":"1875,62",
+   "Display-PortTypeClock":"true",
+   "Display-PortTypeData":"true",
+   "Display-PortTypeInterrupt":"true",
+   "Display-PortTypeOthers":"true",
+   "Display-PortTypeReset":"true",
    "ExpandedHierarchyInLayout":"",
+   "Grouping and No Loops_ScaleFactor":"0.264477",
+   "Grouping and No Loops_TopLeft":"-155,-276",
+   "Interfaces View_Layers":"/zynq_ultra_ps_e_0_pl_clk0:false|/c_addsub_0_S:false|/xfft_0_event_tlast_missing:false|/xfft_0_event_data_in_channel_halt:false|/zynq_ultra_ps_e_0_pl_resetn0:false|/xfft_0_event_frame_started:false|/xfft_0_event_tlast_unexpected:false|/rst_ps8_0_99M_peripheral_aresetn:false|/xfft_0_event_status_channel_halt:false|/xfft_0_event_data_out_channel_halt:false|/mult_gen_0_P:false|/mult_gen_1_P:false|",
+   "Interfaces View_ScaleFactor":"0.378947",
+   "Interfaces View_TopLeft":"-153,-525",
    "guistr":"# # String gsaved with Nlview 7.7.1 2023-07-26 3bc4126617 VDI=43 GEI=38 GUI=JA:21.0
 #  -string -flagsOSRD
-preplace port port-id_pmod_i2s_lrclk -pg 1 -lvl 11 -x 3510 -y 460 -defaultsOSRD
-preplace port port-id_pmod_i2s_bclk -pg 1 -lvl 11 -x 3510 -y 430 -defaultsOSRD
-preplace port port-id_pmod_i2s_dout -pg 1 -lvl 0 -x -10 -y 20 -defaultsOSRD
-preplace port port-id_pmod_btn_sw1 -pg 1 -lvl 0 -x -10 -y 50 -defaultsOSRD
-preplace port port-id_pmod_led_d1 -pg 1 -lvl 11 -x 3510 -y 520 -defaultsOSRD
-preplace port port-id_pmod_i2s2_dout -pg 1 -lvl 11 -x 3510 -y 490 -defaultsOSRD
-preplace port port-id_pmod_i2s2_lrclk -pg 1 -lvl 11 -x 3510 -y 860 -defaultsOSRD
-preplace port port-id_pmod_i2s2_bclk -pg 1 -lvl 0 -x -10 -y 780 -defaultsOSRD
-preplace inst zynq_ultra_ps_e_0 -pg 1 -lvl 10 -x 3160 -y 800 -defaultsOSRD
-preplace inst axi_dma_0 -pg 1 -lvl 8 -x 2310 -y 520 -defaultsOSRD
-preplace inst audio_pipeline_0 -pg 1 -lvl 10 -x 3160 -y 420 -defaultsOSRD
-preplace inst ps8_0_axi_periph -pg 1 -lvl 7 -x 1940 -y 430 -defaultsOSRD
-preplace inst rst_ps8_0_99M -pg 1 -lvl 6 -x 1560 -y 580 -defaultsOSRD
-preplace inst axi_smc -pg 1 -lvl 9 -x 2690 -y 510 -defaultsOSRD
-preplace inst xfft_0 -pg 1 -lvl 4 -x 880 -y 290 -defaultsOSRD
-preplace inst xlslice_0 -pg 1 -lvl 2 -x 290 -y 210 -defaultsOSRD
-preplace inst xlconstant_0 -pg 1 -lvl 2 -x 290 -y 110 -defaultsOSRD
-preplace inst xlconcat_0 -pg 1 -lvl 3 -x 520 -y 200 -defaultsOSRD
-preplace inst xlconstant_1 -pg 1 -lvl 2 -x 290 -y 410 -defaultsOSRD
-preplace inst xlconcat_1 -pg 1 -lvl 2 -x 290 -y 560 -defaultsOSRD
-preplace inst xlconstant_2 -pg 1 -lvl 1 -x 100 -y 490 -defaultsOSRD
-preplace inst xlconstant_3 -pg 1 -lvl 1 -x 100 -y 590 -defaultsOSRD
-preplace inst xlconstant_4 -pg 1 -lvl 1 -x 100 -y 690 -defaultsOSRD
-preplace inst xlconcat_2 -pg 1 -lvl 3 -x 520 -y 330 -defaultsOSRD
-preplace inst xlconstant_5 -pg 1 -lvl 2 -x 290 -y 310 -defaultsOSRD
-preplace inst xlslice_1 -pg 1 -lvl 5 -x 1280 -y 180 -defaultsOSRD
-preplace inst xlslice_2 -pg 1 -lvl 5 -x 1280 -y 280 -defaultsOSRD
-preplace inst mult_gen_0 -pg 1 -lvl 6 -x 1560 -y 170 -defaultsOSRD
-preplace inst mult_gen_1 -pg 1 -lvl 6 -x 1560 -y 290 -defaultsOSRD
-preplace inst c_addsub_0 -pg 1 -lvl 7 -x 1940 -y 190 -defaultsOSRD
-preplace inst xlconcat_3 -pg 1 -lvl 9 -x 2690 -y 180 -defaultsOSRD
-preplace netloc audio_pipeline_0_axis_o_tdata 1 1 10 190 -10 NJ -10 NJ -10 NJ -10 NJ -10 NJ -10 NJ -10 NJ -10 NJ -10 3460
-preplace netloc audio_pipeline_0_axis_o_tlast 1 3 8 660 0 NJ 0 NJ 0 NJ 0 NJ 0 NJ 0 NJ 0 3480
-preplace netloc audio_pipeline_0_axis_o_tvalid 1 3 8 670 10 NJ 10 NJ 10 NJ 10 NJ 10 NJ 10 NJ 10 3490
-preplace netloc audio_pipeline_0_i2s2_dout 1 10 1 3490J 480n
-preplace netloc audio_pipeline_0_i2s_bclk 1 10 1 3490J 430n
-preplace netloc audio_pipeline_0_i2s_lrcl 1 10 1 NJ 460
-preplace netloc audio_pipeline_0_pmod_led_d1 1 10 1 3490J 500n
-preplace netloc axi_dma_0_s_axis_s2mm_tready 1 4 4 1110J 360 NJ 360 1750J 260 2090
-preplace netloc c_addsub_0_S 1 7 1 2110 190n
-preplace netloc mult_gen_0_P 1 6 1 1730 170n
-preplace netloc mult_gen_1_P 1 6 1 1730 200n
-preplace netloc pmod_btn_sw1_1 1 0 10 NJ 50 NJ 50 NJ 50 NJ 50 1090J 40 NJ 40 1790J 50 NJ 50 NJ 50 2840J
-preplace netloc pmod_i2s_dout_1 1 0 10 NJ 20 NJ 20 NJ 20 NJ 20 NJ 20 NJ 20 NJ 20 NJ 20 NJ 20 2870J
-preplace netloc rst_ps8_0_99M_peripheral_aresetn 1 6 4 1800 610 2080 670 2560 600 2850
-preplace netloc xfft_0_event_data_in_channel_halt 1 4 5 1100J 30 NJ 30 NJ 30 NJ 30 2550
-preplace netloc xfft_0_event_data_out_channel_halt 1 4 5 1130J 50 NJ 50 1780J 60 NJ 60 2540
-preplace netloc xfft_0_event_frame_started 1 4 5 1090 60 NJ 60 1770J 70 NJ 70 2500J
-preplace netloc xfft_0_event_status_channel_halt 1 4 5 1140J 70 NJ 70 1760J 80 NJ 80 2530
-preplace netloc xfft_0_event_tlast_missing 1 4 5 1150 90 NJ 90 1740J 100 NJ 100 2520J
-preplace netloc xfft_0_event_tlast_unexpected 1 4 5 1160 100 NJ 100 1730J 110 NJ 110 2510J
-preplace netloc xfft_0_m_axis_data_tdata 1 4 1 1180 180n
-preplace netloc xfft_0_m_axis_data_tlast 1 4 4 1120J 370 NJ 370 1740J 120 2120
-preplace netloc xfft_0_m_axis_data_tvalid 1 4 4 1080J 380 NJ 380 1770J 270 2080
-preplace netloc xfft_0_s_axis_data_tready 1 3 8 680 80 NJ 80 NJ 80 1750J 90 NJ 90 2510J 70 NJ 70 3450
-preplace netloc xlconcat_0_dout 1 3 1 620 200n
-preplace netloc xlconcat_1_dout 1 2 1 390 330n
-preplace netloc xlconcat_2_dout 1 3 1 N 330
-preplace netloc xlconcat_3_dout 1 9 1 2830 180n
-preplace netloc xlconstant_0_dout 1 2 1 390J 110n
-preplace netloc xlconstant_1_dout 1 2 2 420 410 620
-preplace netloc xlconstant_2_dout 1 1 1 180J 490n
-preplace netloc xlconstant_3_dout 1 1 1 190 530n
-preplace netloc xlconstant_4_dout 1 1 1 180J 610n
-preplace netloc xlconstant_5_dout 1 2 1 NJ 310
-preplace netloc xlslice_0_Dout 1 2 1 NJ 210
-preplace netloc xlslice_1_Dout 1 5 1 1390J 160n
-preplace netloc xlslice_2_Dout 1 5 1 1390J 280n
-preplace netloc zynq_ultra_ps_e_0_pl_clk0 1 3 8 680 480 NJ 480 1390 480 1790 590 2120 680 2510 610 2860 680 3460
-preplace netloc zynq_ultra_ps_e_0_pl_resetn0 1 5 6 1390 930 NJ 930 NJ 930 NJ 930 NJ 930 3450
-preplace netloc pmod_i2s2_bclk_1 1 0 11 NJ 780 NJ 780 NJ 780 NJ 780 NJ 780 NJ 780 NJ 780 NJ 780 NJ 780 2820J 920 3470
-preplace netloc zynq_ultra_ps_e_0_emio_uart0_txd 1 10 1 3490 780n
-preplace netloc axi_dma_0_M_AXIS_MM2S 1 8 2 2500 340 NJ
-preplace netloc axi_dma_0_M_AXI_MM2S 1 8 1 2550 460n
-preplace netloc axi_dma_0_M_AXI_S2MM 1 8 1 N 480
-preplace netloc axi_smc_M00_AXI 1 9 1 2820 510n
-preplace netloc ps8_0_axi_periph_M00_AXI 1 7 3 2100J 370 NJ 370 2820
-preplace netloc ps8_0_axi_periph_M01_AXI 1 7 1 N 430
-preplace netloc zynq_ultra_ps_e_0_M_AXI_HPM0_FPD 1 6 5 1800 40 NJ 40 NJ 40 NJ 40 3470
-levelinfo -pg 1 -10 100 290 520 880 1280 1560 1940 2310 2690 3160 3510
-pagesize -pg 1 -db -bbox -sgen -180 -40 3670 940
+preplace port port-id_pmod_i2s_lrclk -pg 1 -lvl 12 -x 4240 -y 60 -defaultsOSRD
+preplace port port-id_pmod_i2s_bclk -pg 1 -lvl 12 -x 4240 -y 20 -defaultsOSRD
+preplace port port-id_pmod_i2s_dout -pg 1 -lvl 0 -x 0 -y 230 -defaultsOSRD
+preplace port port-id_pmod_btn_sw1 -pg 1 -lvl 0 -x 0 -y 310 -defaultsOSRD
+preplace port port-id_pmod_led_d1 -pg 1 -lvl 12 -x 4240 -y 80 -defaultsOSRD
+preplace port port-id_pmod_i2s2_dout -pg 1 -lvl 12 -x 4240 -y 40 -defaultsOSRD
+preplace port port-id_pmod_i2s2_lrclk -pg 1 -lvl 12 -x 4240 -y 190 -defaultsOSRD
+preplace port port-id_pmod_i2s2_bclk -pg 1 -lvl 0 -x 0 -y 990 -defaultsOSRD
+preplace inst zynq_ultra_ps_e_0 -pg 1 -lvl 11 -x 3880 -y 210 -defaultsOSRD
+preplace inst axi_dma_0 -pg 1 -lvl 9 -x 3080 -y 220 -defaultsOSRD
+preplace inst audio_pipeline_0 -pg 1 -lvl 1 -x 210 -y 230 -defaultsOSRD
+preplace inst ps8_0_axi_periph -pg 1 -lvl 5 -x 1830 -y 560 -swap {0 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 21 22 23 24 25 26 27 28 29 30 31 32 33 34 35 36 37 38 39 40 41 42 43 44 45 46 47 48 49 50 51 52 53 54 55 56 57 58 59 60 61 62 63 64 65 66 67 68 69 70 71 72 73 74 75 76 77 78 79 80 81 82 83 84 85 86 87 88 89 90 91 92 93 94 95 96 97 98 99 100 101 102 103 104 105 106 107 108 109 110 111 112 116 113 117 114 118 119 122 115 120 121} -defaultsOSRD
+preplace inst rst_ps8_0_99M -pg 1 -lvl 4 -x 1450 -y 800 -defaultsOSRD
+preplace inst axi_smc -pg 1 -lvl 10 -x 3430 -y 180 -defaultsOSRD
+preplace inst xfft_0 -pg 1 -lvl 3 -x 1020 -y 560 -defaultsOSRD
+preplace inst xlconstant_1 -pg 1 -lvl 1 -x 210 -y 530 -defaultsOSRD
+preplace inst xlconcat_1 -pg 1 -lvl 2 -x 600 -y 940 -defaultsOSRD
+preplace inst xlconstant_2 -pg 1 -lvl 1 -x 210 -y 730 -defaultsOSRD
+preplace inst xlconstant_3 -pg 1 -lvl 1 -x 210 -y 830 -defaultsOSRD
+preplace inst xlconstant_4 -pg 1 -lvl 1 -x 210 -y 930 -defaultsOSRD
+preplace inst xlconcat_2 -pg 1 -lvl 2 -x 600 -y 750 -defaultsOSRD
+preplace inst xlconstant_5 -pg 1 -lvl 1 -x 210 -y 630 -defaultsOSRD
+preplace inst xlslice_1 -pg 1 -lvl 4 -x 1450 -y 220 -defaultsOSRD
+preplace inst xlslice_2 -pg 1 -lvl 4 -x 1450 -y 320 -defaultsOSRD
+preplace inst mult_gen_0 -pg 1 -lvl 5 -x 1830 -y 150 -defaultsOSRD
+preplace inst mult_gen_1 -pg 1 -lvl 5 -x 1830 -y 290 -defaultsOSRD
+preplace inst c_addsub_0 -pg 1 -lvl 6 -x 2100 -y 280 -defaultsOSRD
+preplace inst xlconcat_3 -pg 1 -lvl 4 -x 1450 -y 610 -defaultsOSRD
+preplace inst axis_interconnect_0 -pg 1 -lvl 2 -x 600 -y 460 -swap {0 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 21 17 22 18 23 19 24 20} -defaultsOSRD
+preplace inst axis_interconnect_1 -pg 1 -lvl 8 -x 2710 -y 420 -defaultsOSRD
+preplace inst axis_data_fifo_0 -pg 1 -lvl 7 -x 2380 -y 260 -defaultsOSRD
+preplace netloc audio_pipeline_0_i2s2_dout 1 1 11 400 30 N 30 N 30 N 30 N 30 N 30 N 30 N 30 3280 40 N 40 N
+preplace netloc audio_pipeline_0_i2s_bclk 1 1 11 360 10 N 10 N 10 N 10 N 10 N 10 N 10 N 10 N 10 N 10 4220
+preplace netloc audio_pipeline_0_i2s_lrcl 1 1 11 380 20 N 20 N 20 N 20 N 20 N 20 N 20 N 20 3290 50 N 50 4220
+preplace netloc audio_pipeline_0_pmod_led_d1 1 1 11 410 40 N 40 N 40 N 40 N 40 N 40 N 40 N 40 3260 60 N 60 4210
+preplace netloc mult_gen_0_P 1 5 1 1990 150n
+preplace netloc mult_gen_1_P 1 5 1 N 290
+preplace netloc pmod_btn_sw1_1 1 0 1 NJ 310
+preplace netloc pmod_i2s2_bclk_1 1 0 12 NJ 990 360J 1050 NJ 1050 NJ 1050 N 1050 N 1050 N 1050 N 1050 N 1050 N 1050 N 1050 4190
+preplace netloc pmod_i2s_dout_1 1 0 1 NJ 230
+preplace netloc rst_ps8_0_99M_peripheral_aresetn 1 0 10 50 80 440 270 780 390 N 390 1640 380 N 380 2210 390 2520 190 2900 100 3260
+preplace netloc xfft_0_event_data_in_channel_halt 1 3 1 NJ 640
+preplace netloc xfft_0_event_data_out_channel_halt 1 3 1 NJ 660
+preplace netloc xfft_0_event_frame_started 1 3 1 N 560
+preplace netloc xfft_0_event_status_channel_halt 1 3 1 NJ 620
+preplace netloc xfft_0_event_tlast_missing 1 3 1 N 600
+preplace netloc xfft_0_event_tlast_unexpected 1 3 1 N 580
+preplace netloc xfft_0_m_axis_data_tdata 1 3 1 1240 220n
+preplace netloc xlconcat_1_dout 1 1 2 440 670 760
+preplace netloc xlconcat_2_dout 1 2 1 790 550n
+preplace netloc xlconcat_3_dout 1 0 5 40 70 N 70 N 70 N 70 1620
+preplace netloc xlconstant_1_dout 1 1 2 410 660 800
+preplace netloc xlconstant_2_dout 1 1 1 390J 730n
+preplace netloc xlconstant_3_dout 1 1 1 380 830n
+preplace netloc xlconstant_4_dout 1 1 1 370J 930n
+preplace netloc xlconstant_5_dout 1 1 1 400 630n
+preplace netloc xlslice_1_Dout 1 4 1 1660 140n
+preplace netloc xlslice_2_Dout 1 4 1 1660 280n
+preplace netloc zynq_ultra_ps_e_0_emio_uart0_txd 1 11 1 N 190
+preplace netloc zynq_ultra_ps_e_0_pl_clk0 1 0 12 60 90 420 650 810 760 1240J 900 1660 370 N 370 2240 400 2540 200 2890 90 3290 90 3570 90 4220
+preplace netloc zynq_ultra_ps_e_0_pl_resetn0 1 3 9 1280 80 N 80 N 80 N 80 N 80 N 80 N 80 N 80 4200
+preplace netloc c_addsub_0_S 1 6 1 2190 220n
+preplace netloc xfft_0_m_axis_data_tlast 1 3 4 1260 400 1650J 390 NJ 390 2200J
+preplace netloc axis_data_fifo_0_s_axis_tready 1 3 4 1250 160 1630J 220 2010J 210 2230J
+preplace netloc xfft_0_m_axis_data_tvalid 1 3 4 1270 410 1670J 400 NJ 400 2230J
+preplace netloc axi_dma_0_M_AXIS_MM2S 1 0 10 30 60 390 50 N 50 N 50 N 50 N 50 N 50 N 50 N 50 3250
+preplace netloc axi_dma_0_M_AXI_MM2S 1 9 1 3270 160n
+preplace netloc axi_dma_0_M_AXI_S2MM 1 9 1 3280 150n
+preplace netloc axi_smc_M00_AXI 1 10 1 N 180
+preplace netloc ps8_0_axi_periph_M00_AXI 1 0 6 20 50 370 60 N 60 N 60 N 60 1980
+preplace netloc ps8_0_axi_periph_M01_AXI 1 5 4 2000 140 N 140 N 140 2880
+preplace netloc zynq_ultra_ps_e_0_M_AXI_HPM0_FPD 1 4 8 1680 70 N 70 N 70 N 70 N 70 N 70 N 70 4190
+preplace netloc axis_interconnect_0_M00_AXIS 1 2 1 770J 450n
+preplace netloc audio_pipeline_0_axis_o 1 1 1 430 190n
+preplace netloc axis_data_fifo_0_M_AXIS 1 7 1 N 260
+preplace netloc S01_AXIS_1 1 2 6 760J 380 NJ 380 1630J 360 NJ 360 2220J 380 2530
+preplace netloc axis_interconnect_1_M00_AXIS 1 8 1 2910 190n
+levelinfo -pg 1 0 210 600 1020 1450 1830 2100 2380 2710 3080 3430 3880 4240
+pagesize -pg 1 -db -bbox -sgen -160 0 4460 1100
 "
 }
 
   # Restore current instance
   current_bd_instance $oldCurInst
 
+  validate_bd_design
   save_bd_design
 }
 # End of create_root_design()
@@ -1010,6 +1035,4 @@ pagesize -pg 1 -db -bbox -sgen -180 -40 3670 940
 
 create_root_design ""
 
-
-common::send_gid_msg -ssname BD::TCL -id 2053 -severity "WARNING" "This Tcl script was generated from a block design that has not been validated. It is possible that design <$design_name> may result in errors during validation."
 

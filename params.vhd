@@ -62,8 +62,7 @@ package aud_param is
             empty   : out std_logic;
             full    : out std_logic;
             dout    : out std_logic_vector(DATA_WIDTH-1 downto 0);
-            status  : out std_logic_vector(DATA_WIDTH-1 downto 0);
-            fft_event : in std_logic_vector(5 downto 0)
+            status  : out std_logic_vector((DATA_WIDTH/2)-1 downto 0)
         );
     end component;
    
@@ -226,6 +225,7 @@ package aud_param is
         axis_tvalid     : out std_logic;
         axis_tready     : in  std_logic;
         axis_tlast      : out std_logic;
+        axis_tdest      : out std_logic;
         fifo_rd           : out std_logic;
         fifo_empty        : in std_logic;
         fifo_data         : in std_logic_vector(DATA_WIDTH-1 downto 0);

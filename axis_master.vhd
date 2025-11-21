@@ -43,6 +43,7 @@ entity axis_master is
         axis_tvalid     : out std_logic;
         axis_tready     : in  std_logic;
         axis_tlast      : out std_logic;
+        axis_tdest      : out std_logic;
         fifo_rd           : out std_logic;
         fifo_empty        : in std_logic;
         fifo_data         : in std_logic_vector(DATA_WIDTH-1 downto 0);
@@ -63,6 +64,7 @@ architecture arch of axis_master is
     signal sig_axis_tvalid_buf : std_logic := '0';
     signal sig_fifo_rd : std_logic;
     signal sig_axi_status_reg :  std_logic_vector(DATA_WIDTH-1 downto 0);
+    signal sig_tdata_for_fft : std_logic_vector(DATA_WIDTH-1 downto 0);
 
 begin
     
@@ -101,7 +103,7 @@ begin
             if ((sig_axis_tvalid and axis_tready) = '1') then
                 sig_axis_tlast <= '0';
                 sig_t_count <= sig_t_count + 1;                
-                if (sig_t_count = to_integer(unsigned(sig_axi_control_reg))) then
+                if (sig_t_count = to_integer(unsigned(sig_axi_control_reg(30 downto 0)))) then
                     sig_axis_tlast <= '1';
                     sig_t_count <= 1;
                 end if;
@@ -112,6 +114,12 @@ begin
 
     -- TDATA
     -- axis_tdata <= sig_fifo_data_r when (sig_axis_tvalid and axis_tready) = '1' else (others => '0');
-    axis_tdata <= fifo_data;
+    axis_tdest <= sig_axi_control_reg(31);
+    
+    -- If data going to FFT shift it down to the bottom bits and only use 14 bits;
+    
+    sig_tdata_for_fft <= "00000000000000000" & fifo_data(28 downto 14);
+    axis_tdata <= fifo_data when sig_axi_control_reg(31) = '1' else sig_tdata_for_fft;
+
 
 end arch;

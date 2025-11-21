@@ -18,7 +18,7 @@ entity fifo is
         empty   : out std_logic;
         full    : out std_logic;
         dout    : out std_logic_vector(DATA_WIDTH-1 downto 0);
-        status  : out std_logic_vector(DATA_WIDTH-1 downto 0);
+        status  : out std_logic_vector((DATA_WIDTH/2)-1 downto 0);
         fft_event : in std_logic_vector(5 downto 0)
     );
 end fifo;
@@ -34,7 +34,7 @@ architecture arch of fifo is
     signal int_wrp : unsigned(FIFO_DEPTH-1 downto 0);
 
     signal sig_used : unsigned(FIFO_DEPTH downto 0);
-    signal sig_status : std_logic_vector(DATA_WIDTH-1 downto 0);
+    signal sig_status : std_logic_vector((DATA_WIDTH/2)-1 downto 0);
 
     signal sig_full : std_logic;
     signal sig_empty : std_logic;
@@ -60,12 +60,9 @@ begin
     int_wrp <= wrp(FIFO_DEPTH-1 downto 0);
     sig_used <= wrp - rdp;
     
-    sig_status(31) <= sig_full;
-    sig_status(30) <= sig_empty;
-    sig_status(29 downto 28) <= (others => '0');
-    sig_status(27 downto 22) <= fft_event;
-    sig_status(21 downto FIFO_DEPTH+2) <= (others => '0');
-    sig_status(FIFO_DEPTH+1) <= '1';
+    sig_status((DATA_WIDTH/2)-1) <= sig_full;
+    sig_status((DATA_WIDTH/2)-2) <= sig_empty;
+    sig_status((DATA_WIDTH/2)-3 downto FIFO_DEPTH+1) <= (others => '0');
     sig_status(FIFO_DEPTH downto 0) <= std_logic_vector(sig_used);
     
     process (rdp, wrp, int_rdp, int_wrp)
