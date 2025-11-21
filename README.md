@@ -20,7 +20,7 @@ This project is ran on the Xilinx Kria KV260 Vision AI Starter Kit. Attached to 
 MIDI is a data standard for electronic musical instruments and synthesizers to connect over a UART line of communication. A typical MIDI packet is 10 bits wide, with a start bit (low), 8 data bits and a stop bit (high), with MIDI transfers typically consisting of an instruction packet followed by an expected amount of data packets. Whilst there are many facets of the MIDI protocol, this project simply focuses on the transferral of data relating to turning on and off notes.
 
 ### 1.3 Internal Project Diagram
-![Imgur](https://imgur.com/qZLbZUD)
+![Data Flow Diagram](./Images/comp3601-internal-diagram.png)
 
 ### 1.4 How Does this Project Integrate into a Wider System?
 
