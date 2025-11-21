@@ -168,14 +168,22 @@ flowchart TD
 
 ### 5.1 Building Vivado Model
 
--- TODO instructions on building vivado model
+```create_project.tcl``` has been created to build the project from scratch.
+To use this script run the following:
+```
+cd <path to your clone of this repo>
+source create_project.tcl
+```
+The project will construct and build in the repo folder under `audio_to_midi_project`
 
 **Exporting block design**
+Any changes to the block diagram requires the `pl_audio_pipeline.tcl` to be updated. This can be done with the following: 
 ```write_bd_tcl -include_layout -force pl_audio_pipeline.tcl```
 
-**Importing block design**
-In Vivado IDE
-```Tools > Run Tcl Script```
+**Adding source files**
+Any additional VHDL source files need to be added to `create_project.tcl`. This can be done by adding an add file line to to script.
+The format is the following:
+```add_files -norecurse ${repo_dir}/<filename>```
 
 ### 5.2 Building Vitis Platform and Project
 
