@@ -43,7 +43,7 @@ flowchart TD
 # 3 Explanation of Hardware
 
 ### 3.1 Vivado Block Diagram
--- TODO: insert image of block diagram via ![alt text](http://url/to/img.png)
+![Block Diagram](./Images/vivado-block-diagram.png)
 
 ### 3.2 audio_pipeline Module
 -- TODO: explain the data flow into/out of audio pipeline (including feedback)
@@ -204,6 +204,8 @@ rst -system
 Finally, enter the commands `connect`, `boot_jtag` and `exit`. After this, the board is prepared for use. 
 
 Next, press the `Run` command in the Vitis command bar. Then observe the serial terminal which, on startup, should have a waterfall generator (for best results, fullscreen the terminal). Pressing the button on the pmod Board will switch the output modes from Single Note, to Triple Notes, to Sextuple Notes and back to Single Note. The output in the serial terminal also depends on which mode of MIDI output the board is in, with Single Note corresponding to the waterfall generator, Triple Notes only displaying the transmitted MIDI values and Sextuple Notes displaying the most prominent detected frequencies between 60Hz and 2400Hz. If we wish to transmit the MIDI signal or simply observe the MIDI packets on an oscilloscope, we will need to connect to uart0_tx which corresponds to i2s2_lrclk on the pmod board, highlighted below alongside the +3V line and GND. Finally, if we wish to access other features (such as using digital audio input over raw audio input), then we must simply edit some lines in the C file and again press `Run`.
+
+![MIDI Ports](./Images/pmod_chip.jpg)
 
 ### 5.4 Integrating this project
 
