@@ -38,7 +38,9 @@ flowchart TD
 
 # 2 File Organisation
 
--- TODO: brief overview of all files in the github directory, consider grouping together related files such as VHDL source files into their own directory
+There are four testbenches included in the project. `fifo_TB.vhd` tests the fifo. `axis_TB.vhd` tests the AXI stream implementation. `i2s_slave_TB` and `i2s_master_TB` test the respective i2s controllers.
+
+`xsas` holds prebuilt XSAs to allow for quick usage of the design. `audio_to_midi_24.xsa` is the latest build. You can confirm which version you are using by checking the version register.
 
 # 3 Explanation of Hardware
 
@@ -69,9 +71,95 @@ This AXI DMA then acts as the interface by which, through an AXI SmartConnect mo
 
 Finally, in order to transmit our MIDI, we have enabled UART0 in the Zynq Ultrascale+ MPSoC IP, setting the I/O to EMIO which allows us to access the UART signal on the internal hardware lines. From this, we have attached emio_uart0_txd to the pmod_i2s2_lrclk pin and the (unused) emio_uart0_rxd to the pmod_i2s2_bclk pin.
 
+### 3.5 Register Space
+
+Register Base: `0xA0000000`
+
+#### I2S control register:
+**Offset:** 0x0
+
+**Access:** RW
+
+**Description:** Control I2S features.
+| Bit  | Contents                               |
+|------|----------------------------------------|
+| 0    | Capture: 1 = Enable, 0 = Disable       |
+| 1    | Left Channel: 1 = Enable, 0 = Disable  |
+| 2    | Right Channel: 1 = Enable, 0 = Disable |
+| 3-5  | Unused                                 |
+| 6    | 1: Feedback System, 0: Use Mic Data    |
+| 7-31 | Unused                                 |
+
+#### FIFO status register:
+**Offset:** 0x4
+
+**Access:** RO
+
+**Description:** FIFO statuses
+| Bit   | Contents               |
+|-------|------------------------|
+| 31    | Feedback FIFO full     |
+| 30    | Feedback FIFO empty    |
+| 29-16 | Items in feedback FIFO |
+| 15    | Data FIFO full         |
+| 14    | Data FIFO empty        |
+| 13-0  | Items in data FIFO     |
+
+#### Version register:
+**Offset:** 0x8
+
+**Access:** RO
+
+**Description:** Get version of PL image.
+| Bit  | Contents               |
+|------|------------------------|
+| 0-31 | PL Image Version       |
+
+#### AXI control register:
+**Offset:** 0xC
+
+**Access:** RW
+
+**Description:** Control AXI Stream packet length and bypass.
+| Bit  | Contents                                                                 |
+|------|--------------------------------------------------------------------------|
+| 0-30 | AXIS Packet Length. This should be set to 2048 while the FFT is enabled. |
+| 31   | 1: Bypass FFT, 0: Enable FFT                                             |
+
+#### General status register:
+**Offset:** 0x10
+
+**Access:** RO
+
+**Description:** FFT and Button status.
+| Bit  | Contents                  |
+|------|---------------------------|
+| 0    | FFT Frame started         |
+| 1    | FFT TLAST unexpected      |
+| 2    | FFT TLAST missing         |
+| 3    | FFT Status channel halt   |
+| 4    | FFT Data in channel halt  |
+| 5    | FFT Data out channel halt |
+| 6-30 | Unused                    |
+| 31   | Button Pressed            |
+
+#### AXIS master status register:
+**Offset:** 0x14
+
+**Access:** RO
+
+**Description:** Status of AXIS master.
+| Bit  | Contents                  |
+|------|---------------------------|
+| 31   | TVALID                    |
+| 30   | TREADY                    |
+| 29   | Initialised               |
+| 28-0 | Data sent in packet count |
+
+
 # 4 Explanation of Software
 
-All of the project's software is contained within the helloworld.c file. TODO -- change the file name
+All of the project's software is contained within the freq_to_midi.c file.
 
 ### 4.1 Functions
 
@@ -178,7 +266,7 @@ flowchart TD
 In this project, we used Vivado 2024.1's design suite to create a hardware implementation of our design.
 
 ```create_project.tcl``` has been created to build the project from scratch.
-To use this script run the following:
+To use this script run the following in vivado's tcl console:
 ```
 cd <path to your clone of this repo>
 source create_project.tcl
