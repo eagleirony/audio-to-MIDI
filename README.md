@@ -1,5 +1,5 @@
 # COMP3601 Audio Project
-## Audio to MIDI Converter
+## Audio to MIDI Converter (Group 12)
 
 ## Table of Contents
 1. [Introduction](#1-introduction)
