@@ -14,7 +14,9 @@ This project was created by Aaron Nyholm (z5316510), Daniel Craig (z5417681) and
 
 ### 1.1 Project Overview
 This repository contains the files for an audio to MIDI converter. This device takes in raw audio via I2S microphone (and even recorded audio data via AXI Stream into audio_pipeline), converts this into bins in the frequency domain using Xilinx's Fast Fourier Transform core, and outputs prominent notes within octaves 3-5 (130.81Hz - 987.77Hz) via the MIDI data standard.
-This project is ran on the Xilinx Kria KV260 Vision AI Starter Kit. Attached to this is a specially designed PMod Board alongside a SPH0645 I2S Mic, allowing for I2S audio input into the KV260's PL.
+This project is ran on the Xilinx Kria KV260 Vision AI Starter Kit. Attached to this is a specially designed PMod Board alongside a SPH0645 I2S Mic, allowing for I2S audio input into the KV260's PL. An image of the project board can be seen below.
+
+![Project Board](./Images/kria-board)
 
 ### 1.2 MIDI Overview
 MIDI is a data standard for electronic musical instruments and synthesizers to connect over a UART line of communication. A typical MIDI packet is 10 bits wide, with a start bit (low), 8 data bits and a stop bit (high), with MIDI transfers typically consisting of an instruction packet followed by an expected amount of data packets. Whilst there are many facets of the MIDI protocol, this project simply focuses on the transferral of data relating to turning on and off notes.
@@ -103,7 +105,7 @@ All of the project's software is contained within the helloworld.c file. TODO --
 ### 4.2 Global Variables
 
 AXI DMA related variables
-- **XAxiDma_Config *CfgPtr**
+- **XAxiDma_Config \*CfgPtr**
 	The configuration pointer for the AXI DMA
 
 - **XAxiDma AxiDma**
