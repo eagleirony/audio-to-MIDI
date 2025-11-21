@@ -46,9 +46,16 @@ flowchart TD
 ![Block Diagram](./Images/vivado-block-diagram.png)
 
 ### 3.2 audio_pipeline Module
--- TODO: explain the data flow into/out of audio pipeline (including feedback)
 
-Moreover, the pmod_btn_sw1 port has been wired into the MSB of the version register inside audio_pipeline to allow for reading of the button from the PS.
+The audio_pipeline module of our design directly interacts with the i2s microphone via the pmod_i2s_dout, pmod_i2s_bclk and pmod_i2s_lrclk ports. 
+
+In i2s_master.vhd, this raw data is captured from these i2s lines and stored in the FIFO (instantiated through fifo.vhd) for further transmission, with our sampling rate being 25201Hz. Moreover, we can configure which i2s channel (L/R/both) is accepted by the i2s_master in PS. 
+
+Also configurable in the PS core, we can instead receive digital audio data through an axis slave with another attached FIFO (axis_slave.vhd). This instead causes the audio_pipeline to send the signal received by the axis slave to the FFT IP, which allows our system to output MIDI signals of recorded audio. When the system is receiving digital input, we have coded it so that pmod_led_d1 is switched on for immediate visual indication. 
+
+Furthermore, we make use of status registers to observe the internal behaviour of the FIFOs and the FFT event signals. To check the behaviour of the submodules of audio_pipeline, we have test benches for both the i2s_master and the fifos.
+
+Moreover, the pmod_btn_sw1 port has been wired into the MSB of the version register, allowing for the PS to read buttons to change states of the machine.
 
 ### 3.3 Xilinx Fast Fourier Transform IP
 This raw data is then fed out of the audio pipeline module and into the xfft IP via AXI Stream. The data fed into AXI Stream is reduced from 32 bits to 15 bits wide, this is because the input to the xfft is comprised of two 16 bit signed numbers representing imaginary and real data (and so we reduce to 15 bits to ensure our real input doesn't experience sign changes)
