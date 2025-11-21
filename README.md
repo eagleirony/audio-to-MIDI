@@ -141,6 +141,7 @@ Misc
 When ran, the program first initialises both the AXI DMA and UART0 lines. After this, the program enters an indefinite loop of the form
 
 ```mermaid
+flowchart TD
 	A[Check Button and State Transition] --> B[Fetch FFT Data via AXI DMA];
 	B --> C[Process Raw Data into FFT Bins];
 	C --> D[Process FFT Bin Data into Selected MIDI Notes Data];
@@ -159,10 +160,10 @@ When ran, the program first initialises both the AXI DMA and UART0 lines. After 
 
 -- TODO instructions on building vivado model
 
-# Exporting block design
+**Exporting block design**
 ```write_bd_tcl -include_layout -force pl_audio_pipeline.tcl```
 
-# Importing block design
+**Importing block design**
 In Vivado IDE
 ```Tools > Run Tcl Script```
 
