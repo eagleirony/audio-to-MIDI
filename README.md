@@ -168,6 +168,8 @@ flowchart TD
 
 ### 5.1 Building Vivado Model
 
+In this project, we used Vivado 2024.1's design suite to create a hardware implementation of our design.
+
 -- TODO instructions on building vivado model
 
 **Exporting block design**
@@ -179,7 +181,11 @@ In Vivado IDE
 
 ### 5.2 Building Vitis Platform and Project
 
--- TODO instructions on doing this from a .xsa file <=> essentially copy over code, build, add math library via C/C++ Build Configurations and make stdin and stdout on ps_uart_1
+In this project, we used Vitis Classic 2024.1 to realise the PS module of our design. When launching Vitis, create or use an existing workspace. Next, select `File>New>Platform Project`, and choose a sensible name for the platform. After this, either select the downloaded .xsa file from the repository, or use a .xsa generated from the Vivado project above. Leave all other options as default, and wait as the platform is created. 
+
+An important step to enable ```print``` and ```printf``` statements in the serial terminal is to switch the stdin and stdout ports to uart1. To do this, click on the .spr file under the newly created platform. From this, under the 'standalone on psu_cortexa53' folder, click on `Board Support Package` and then on `Modify BSP Settings...`. On the next page, go to the `standalone` tab and change the values of stdin and stdout from psu_uart_0 to psu_uart_1. After this, click OK and then right click on the platform and select `Build Project`.
+
+The next step after this is to select `File>New>Application Project`, select the just created platform when prompted to and name the project a sensible name. After this, leave `Domain` as default and press `Next`, then select the `Hello World` template. After this generates the project, go to the `src` directory and double click on `helloworld.c`, copy paste the entirity of the .c file in this repository into that file. After this, right click on the file that shares the project name (it is right under the [project name]_system file). Then select `C/C++ Build Settings`. On the pop-up, the default page should be `Settings`. In this settings page, navigate to `ARM v8 gcc linker/Libraries`. On this page, select `Add` (symbol to the write of `Libraries (-l)`) and then type `m` before pressing `Ok` and `Apply and Close`. Finally, build the project so that it is ready to run.
 
 ### 5.3 Running this Project
 
@@ -207,6 +213,12 @@ Next, press the `Run` command in the Vitis command bar. Then observe the serial 
 
 ![MIDI Ports](./Images/pmod_chip.jpg)
 
-### 5.4 Integrating this project
+### 5.4 Integrating this project into a larger system
 
--- TODO describe setup for getting the MIDI from our board and transferring it to synthesizer of choice
+To integrate this project into a larger audio system, we need to create an adapter for the MIDI output. The form of such adapter depends on the device which we desire to connect our project to. When we demo-ed our project, the device we connected the our project to ____ accepted MIDI input via a DIN connector. Below, we can observe our modified DIN connector which we used to connect to this device.
+
+![Modified DIN connector](./Images/din-connector.jpg)
+
+As an example of how one could integrate our project into a system, our demo involved playing guitar into the microphone and playing back the MIDI output using an amplifier. Below is an image of this demonstration, contact us if you desire a video.
+
+![Our Integration](./Images/demo-image.png)
