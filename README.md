@@ -183,7 +183,27 @@ In Vivado IDE
 
 ### 5.3 Running this Project
 
--- Undecided whether or not to mention the need for repeated runs (in which case the print gives a good indicator of needing to restart), include image here highlighting the i2s2 pin location on the PMod Board for using an oscilloscope
+Once the Vitis Platform is built, we now need to connect the project board via the UART1 line from MIO36..37. This input is the USB-C Adapter on the Kria KV260 board. Once this is connected to our PC, we will want a Serial connection terminal to observe the print statements over UART1. With PuTTY (or a similar program), create a serial instance at the correct serial line with Baud Rate set to 115200. To confirm that the correct line has been chosen, press the reset button on the board and observe if the reboot messages are received in the terminal.
+
+Next, we will need to set the board to JTAG mode. Our elected method of doing this is to use Xilinx XSCT 2024.1. Once open, enter into the terminal
+
+```
+proc boot_jtag { } {
+############################
+# Switch to JTAG boot mode #
+############################
+targets -set -filter {name =~ "PSU"}
+# update multiboot to ZERO
+mwr 0xffca0010 0x0
+# change boot mode to JTAG
+mwr 0xff5e0200 0x0100
+# reset
+rst -system
+}
+```
+Finally, enter the commands `connect`, `boot_jtag` and `exit`. After this, the board is prepared for use. 
+
+Next, press the `Run` command in the Vitis command bar. Then observe the serial terminal which, on startup, should have a waterfall generator (for best results, fullscreen the terminal). Pressing the button on the pmod Board will switch the output modes from Single Note, to Triple Notes, to Sextuple Notes and back to Single Note. The output in the serial terminal also depends on which mode of MIDI output the board is in, with Single Note corresponding to the waterfall generator, Triple Notes only displaying the transmitted MIDI values and Sextuple Notes displaying the most prominent detected frequencies between 60Hz and 2400Hz. If we wish to transmit the MIDI signal or simply observe the MIDI packets on an oscilloscope, we will need to connect to uart0_tx which corresponds to i2s2_lrclk on the pmod board, highlighted below alongside the +3V line and GND. Finally, if we wish to access other features (such as using digital audio input over raw audio input), then we must simply edit some lines in the C file and again press `Run`.
 
 ### 5.4 Integrating this project
 
