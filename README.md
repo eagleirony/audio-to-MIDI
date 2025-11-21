@@ -325,3 +325,8 @@ To integrate this project into a larger audio system, we need to create an adapt
 As an example of how one could integrate our project into a system, our demo involved playing guitar into the microphone and playing back the MIDI notes using an Ableton and amplifier. Below is an image of this demonstration, contact us if you desire a video.
 
 ![Our Integration](./Images/project-demo.JPG)
+
+### 5.5 Running tests
+
+To run tests set `feedback` to `1` in `freq_to_midi.c`. This will run through freqencies and you should see something like the following on the waterfall display.
+![Test output on waterfall display](./Images/test-output.png)
